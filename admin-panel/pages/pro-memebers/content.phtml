@@ -361,26 +361,7 @@ if (($page > $db->totalPages) && !empty($_GET['page-id'])) {
                           </ul>
                       </nav>
                     </div>
-                    <div class="clearfix"></div>
-                    <div class="row">
-                          <div class="col-lg-2 col-md-2">
-                              <span>Action</span>
-                              <select class="form-control show-tick" id="action_type">
-                                <?php $pros = Wo_GetProPackages();?>
-                                <?php foreach ($pros as $key => $pro) {?>
-                                  <option value="<?php echo $key;?>"><?php echo $pro['name'];?></option>
-                                <?php } ?>
-                                  <option value="activate">Activate</option>
-                                  <option value="deactivate">Deactivate</option>
-                                  <option value="delete">Delete</option>
-                              </select>
-                          </div>
-                          <div class="col-lg-3 col-md-3">
-                              <span>&nbsp;</span>
-                              <button type="button" class="btn btn-info waves-effect delete-selected d-block" disabled>Submit<span></span></button>
-                          </div>
-                      </div>
-                  </div>
+                  
                 </div>
             </div>
         </div>

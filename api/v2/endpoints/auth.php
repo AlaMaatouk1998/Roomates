@@ -33,10 +33,7 @@ if (empty($error_code)) {
         $error_code    = 6;
         $error_message = 'Too many login attempts please try again later';
     }
-    elseif (Wo_IsBanned($username)) {
-        $error_code    = 7;
-        $error_message = 'this user is banned';
-     } else {
+     else {
         $login = Wo_Login($username, $password);
         if (!$login) {
             $error_code    = 5;

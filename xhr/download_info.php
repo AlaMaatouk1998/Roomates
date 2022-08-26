@@ -9,10 +9,10 @@ if ($f == 'download_info') {
         $html = '';
         if (!empty($_POST['my_information'])) {
             $wo['user_info']['setting'] = Wo_UserData($wo['user']['user_id']);
-            $wo['user_info']['setting']['session'] = Wo_GetAllSessionsFromUserID($wo['user']['user_id']);
-            $wo['user_info']['setting']['block'] = Wo_GetBlockedMembers($wo['user']['user_id']);
-            $wo['user_info']['setting']['trans'] = Wo_GetMytransactions();
-            $wo['user_info']['setting']['refs'] = Wo_GetReferrers();
+            // $wo['user_info']['setting']['session'] = Wo_GetAllSessionsFromUserID($wo['user']['user_id']);
+            // $wo['user_info']['setting']['block'] = Wo_GetBlockedMembers($wo['user']['user_id']);
+            // $wo['user_info']['setting']['trans'] = Wo_GetMytransactions();
+            // $wo['user_info']['setting']['refs'] = Wo_GetReferrers();
             // print_r($wo['user_info']['setting']['open_to_work_datajob_type']);
             // exit();
         }

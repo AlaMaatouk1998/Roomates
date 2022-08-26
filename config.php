@@ -15,10 +15,10 @@ $sql_db_user = "root";
 // MySQL Database Password
 $sql_db_pass = "";
 // MySQL Database Name
-$sql_db_name = "wowonder";
+$sql_db_name = "roomates";
 
 // Site URL
-$site_url = "http://localhost/wowonder"; // e.g (http://example.com)
+$site_url = "http://localhost/roomates"; // e.g (http://example.com)
 
 // Purchase code
 $purchase_code = "anything"; // Your purchase code, don't give it to anyone.

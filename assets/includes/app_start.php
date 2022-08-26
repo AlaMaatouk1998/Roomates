@@ -7,7 +7,7 @@ error_reporting(0);
 @set_time_limit(0);
 require_once "config.php";
 require_once "assets/libraries/DB/vendor/autoload.php";
-require_once "assets/libraries/PayPal/vendor/paypal/rest-api-sdk-php/lib.php";
+//  require_once "assets/libraries/PayPal/vendor/paypal/rest-api-sdk-php/lib.php";
 
 $wo           = array();
 // Connect to SQL Server
@@ -35,10 +35,7 @@ if (isset($ServerErrors) && !empty($ServerErrors)) {
     }
     die();
 }
-$baned_ips = Wo_GetBanned("user");
-if (in_array($_SERVER["REMOTE_ADDR"], $baned_ips)) {
-    exit();
-}
+
 $config    = Wo_GetConfig();
 $db        = new MysqliDb($sqlConnect);
 $all_langs = Wo_LangsNamesFromDB();
@@ -357,44 +354,39 @@ if (!empty($_GET["mode"])) {
 }
 include_once "assets/includes/onesignal_config.php";
 if (!empty($_GET["access"]) || empty($_COOKIE["access"])) {
-    include_once "assets/includes/paypal_config.php";
+    // include_once "assets/includes/paypal_config.php";
     setcookie("access", "1", time() + 24 * 60 * 60, "/");
 }
 if ($wo["config"]["last_notification_delete_run"] <= time() - 60 * 60 * 24) {
     mysqli_multi_query($sqlConnect, " DELETE FROM " . T_NOTIFICATION . " WHERE `time` < " . (time() - 60 * 60 * 24 * 5) . " AND `seen` <> 0");
     mysqli_query($sqlConnect, "UPDATE " . T_CONFIG . " SET `value` = '" . time() . "' WHERE `name` = 'last_notification_delete_run'");
 }
-// manage packages
-$wo["pro_packages"]       = Wo_GetAllProInfo();
-$wo["pro_packages_types"] = array(
-    "1" => "star",
-    "2" => "hot",
-    "3" => "ultima",
-    "4" => "vip",
-);
-// manage packages
-$star_package_duration    = 604800; // week in seconds
-$hot_package_duration     = 2629743; // month in seconds
-$ultima_package_duration  = 31556926; // year in seconds
-$vip_package_duration     = 0; // life time package
-$time_array               = array(
-    "week" => $star_package_duration,
-    "month" => $hot_package_duration,
-    "year" => $ultima_package_duration,
-    "unlimited" => $vip_package_duration
-);
-if (in_array($wo["pro_packages"]["star"]["time"], array_keys($time_array))) {
-    $star_package_duration = $time_array[$wo["pro_packages"]["star"]["time"]];
-}
-if (in_array($wo["pro_packages"]["hot"]["time"], array_keys($time_array))) {
-    $hot_package_duration = $time_array[$wo["pro_packages"]["hot"]["time"]];
-}
-if (in_array($wo["pro_packages"]["ultima"]["time"], array_keys($time_array))) {
-    $ultima_package_duration = $time_array[$wo["pro_packages"]["ultima"]["time"]];
-}
-if (in_array($wo["pro_packages"]["vip"]["time"], array_keys($time_array))) {
-    $vip_package_duration = $time_array[$wo["pro_packages"]["vip"]["time"]];
-}
+
+// PRO Packages Functions Deleted ( commented )
+
+
+// $star_package_duration    = 604800; // week in seconds
+// $hot_package_duration     = 2629743; // month in seconds
+// $ultima_package_duration  = 31556926; // year in seconds
+// $vip_package_duration     = 0; // life time package
+// $time_array               = array(
+//     "week" => $star_package_duration,
+//     "month" => $hot_package_duration,
+//     "year" => $ultima_package_duration,
+//     "unlimited" => $vip_package_duration
+// );
+// if (in_array($wo["pro_packages"]["star"]["time"], array_keys($time_array))) {
+//     $star_package_duration = $time_array[$wo["pro_packages"]["star"]["time"]];
+// }
+// if (in_array($wo["pro_packages"]["hot"]["time"], array_keys($time_array))) {
+//     $hot_package_duration = $time_array[$wo["pro_packages"]["hot"]["time"]];
+// }
+// if (in_array($wo["pro_packages"]["ultima"]["time"], array_keys($time_array))) {
+//     $ultima_package_duration = $time_array[$wo["pro_packages"]["ultima"]["time"]];
+// }
+// if (in_array($wo["pro_packages"]["vip"]["time"], array_keys($time_array))) {
+//     $vip_package_duration = $time_array[$wo["pro_packages"]["vip"]["time"]];
+// }
 // $seconds_in_day = (60*60*24);
 // $star_package_duration   = $seconds_in_day * $wo['pro_packages']['star']['time']; // week in seconds
 // $hot_package_duration    = $seconds_in_day * $wo['pro_packages']['hot']['time']; // month in seconds
@@ -439,90 +431,90 @@ $wo["post_colors"] = array();
 if ($wo["config"]["colored_posts_system"] == 1) {
     $wo["post_colors"] = Wo_GetAllColors();
 }
-if ($wo["loggedin"] == true && $wo["user"]["is_pro"]) {
-    $notify = false;
-    $remove = false;
-    if ($wo["config"]["pro"]) {
-        switch ($wo["user"]["pro_type"]) {
-            case "1":
-                if ($wo["pro_packages"]["star"]["time"] != "unlimited") {
-                    $end_time = $wo["user"]["pro_time"] + $star_package_duration;
-                    if ($end_time > time() && $end_time <= time() + 60 * 60 * 24 * 3) {
-                        $notify = true;
-                    } elseif ($end_time <= time()) {
-                        $remove = true;
-                    }
-                }
-                break;
-            case "2":
-                if ($wo["pro_packages"]["hot"]["time"] != "unlimited") {
-                    $end_time = $wo["user"]["pro_time"] + $hot_package_duration;
-                    if ($end_time > time() && $end_time <= time() + 60 * 60 * 24 * 3) {
-                        $notify = true;
-                    } elseif ($end_time <= time()) {
-                        $remove = true;
-                    }
-                }
-                break;
-            case "3":
-                if ($wo["pro_packages"]["ultima"]["time"] != "unlimited") {
-                    $end_time = $wo["user"]["pro_time"] + $ultima_package_duration;
-                    if ($end_time > time() && $end_time <= time() + 60 * 60 * 24 * 3) {
-                        $notify = true;
-                    } elseif ($end_time <= time()) {
-                        $remove = true;
-                    }
-                }
-                break;
-            case "4":
-                if ($wo["pro_packages"]["vip"]["time"] != "unlimited") {
-                    $end_time = $wo["user"]["pro_time"] + $vip_package_duration;
-                    if ($end_time > time() && $end_time <= time() + 60 * 60 * 24 * 3) {
-                        $notify = true;
-                    } elseif ($end_time <= time()) {
-                        $remove = true;
-                    }
-                }
-                break;
-        }
-    }
-    if ($notify == true) {
-        $start     = date_create(date("Y-m-d H:i:s", time()));
-        $end       = date_create(date("Y-m-d H:i:s", $end_time));
-        $diff      = date_diff($end, $start);
-        $left_time = "";
-        if (!empty($diff->d)) {
-            $left_time = $diff->d . " " . $wo["lang"]["day"];
-        } elseif (!empty($diff->h)) {
-            $left_time = $diff->h . " " . $wo["lang"]["hour"];
-        } elseif (!empty($diff->i)) {
-            $left_time = $diff->i . " " . $wo["lang"]["minute"];
-        }
-        $day       = date("d");
-        $month     = date("n");
-        $year      = date("Y");
-        $query_one = " SELECT COUNT(*) AS count FROM " . T_NOTIFICATION . " WHERE `recipient_id` = " . $wo["user"]["id"] . " AND DAY(FROM_UNIXTIME(time)) = '{$day}' AND MONTH(FROM_UNIXTIME(time)) = '{$month}' AND YEAR(FROM_UNIXTIME(time)) = '{$year}' AND `type` = 'remaining'";
-        $query     = mysqli_query($sqlConnect, $query_one);
-        if ($query) {
-            $fetched_data = mysqli_fetch_assoc($query);
-            if ($fetched_data["count"] < 1) {
-                $db->insert(T_NOTIFICATION, array(
-                    "recipient_id" => $wo["user"]["id"],
-                    "type" => "remaining",
-                    "text" => str_replace("{{time}}", $left_time, $wo["lang"]["remaining_text"]),
-                    "url" => "index.php?link1=home",
-                    "time" => time()
-                ));
-            }
-        }
-    }
-    if ($remove == true) {
-        $update      = Wo_UpdateUserData($wo["user"]["id"], array(
-            "is_pro" => 0
-        ));
-        $user_id     = $wo["user"]["id"];
-        $mysql_query = mysqli_query($sqlConnect, "UPDATE " . T_PAGES . " SET `boosted` = '0' WHERE `user_id` = {$user_id}");
-        $mysql_query = mysqli_query($sqlConnect, "UPDATE " . T_POSTS . " SET `boosted` = '0' WHERE `user_id` = {$user_id}");
-        $mysql_query = mysqli_query($sqlConnect, "UPDATE " . T_POSTS . " SET `boosted` = '0' WHERE `page_id` IN (SELECT `page_id` FROM " . T_PAGES . " WHERE `user_id` = {$user_id})");
-    }
-}
+// if ($wo["loggedin"] == true && $wo["user"]["is_pro"]) {
+//     $notify = false;
+//     $remove = false;
+//     if ($wo["config"]["pro"]) {
+//         switch ($wo["user"]["pro_type"]) {
+//             case "1":
+//                 if ($wo["pro_packages"]["star"]["time"] != "unlimited") {
+//                     $end_time = $wo["user"]["pro_time"] + $star_package_duration;
+//                     if ($end_time > time() && $end_time <= time() + 60 * 60 * 24 * 3) {
+//                         $notify = true;
+//                     } elseif ($end_time <= time()) {
+//                         $remove = true;
+//                     }
+//                 }
+//                 break;
+//             case "2":
+//                 if ($wo["pro_packages"]["hot"]["time"] != "unlimited") {
+//                     $end_time = $wo["user"]["pro_time"] + $hot_package_duration;
+//                     if ($end_time > time() && $end_time <= time() + 60 * 60 * 24 * 3) {
+//                         $notify = true;
+//                     } elseif ($end_time <= time()) {
+//                         $remove = true;
+//                     }
+//                 }
+//                 break;
+//             case "3":
+//                 if ($wo["pro_packages"]["ultima"]["time"] != "unlimited") {
+//                     $end_time = $wo["user"]["pro_time"] + $ultima_package_duration;
+//                     if ($end_time > time() && $end_time <= time() + 60 * 60 * 24 * 3) {
+//                         $notify = true;
+//                     } elseif ($end_time <= time()) {
+//                         $remove = true;
+//                     }
+//                 }
+//                 break;
+//             case "4":
+//                 if ($wo["pro_packages"]["vip"]["time"] != "unlimited") {
+//                     $end_time = $wo["user"]["pro_time"] + $vip_package_duration;
+//                     if ($end_time > time() && $end_time <= time() + 60 * 60 * 24 * 3) {
+//                         $notify = true;
+//                     } elseif ($end_time <= time()) {
+//                         $remove = true;
+//                     }
+//                 }
+//                 break;
+//         }
+//     }
+//     if ($notify == true) {
+//         $start     = date_create(date("Y-m-d H:i:s", time()));
+//         $end       = date_create(date("Y-m-d H:i:s", $end_time));
+//         $diff      = date_diff($end, $start);
+//         $left_time = "";
+//         if (!empty($diff->d)) {
+//             $left_time = $diff->d . " " . $wo["lang"]["day"];
+//         } elseif (!empty($diff->h)) {
+//             $left_time = $diff->h . " " . $wo["lang"]["hour"];
+//         } elseif (!empty($diff->i)) {
+//             $left_time = $diff->i . " " . $wo["lang"]["minute"];
+//         }
+//         $day       = date("d");
+//         $month     = date("n");
+//         $year      = date("Y");
+//         $query_one = " SELECT COUNT(*) AS count FROM " . T_NOTIFICATION . " WHERE `recipient_id` = " . $wo["user"]["id"] . " AND DAY(FROM_UNIXTIME(time)) = '{$day}' AND MONTH(FROM_UNIXTIME(time)) = '{$month}' AND YEAR(FROM_UNIXTIME(time)) = '{$year}' AND `type` = 'remaining'";
+//         $query     = mysqli_query($sqlConnect, $query_one);
+//         if ($query) {
+//             $fetched_data = mysqli_fetch_assoc($query);
+//             if ($fetched_data["count"] < 1) {
+//                 $db->insert(T_NOTIFICATION, array(
+//                     "recipient_id" => $wo["user"]["id"],
+//                     "type" => "remaining",
+//                     "text" => str_replace("{{time}}", $left_time, $wo["lang"]["remaining_text"]),
+//                     "url" => "index.php?link1=home",
+//                     "time" => time()
+//                 ));
+//             }
+//         }
+//     }
+//     if ($remove == true) {
+//         $update      = Wo_UpdateUserData($wo["user"]["id"], array(
+//             "is_pro" => 0
+//         ));
+//         $user_id     = $wo["user"]["id"];
+//         $mysql_query = mysqli_query($sqlConnect, "UPDATE " . T_PAGES . " SET `boosted` = '0' WHERE `user_id` = {$user_id}");
+//         $mysql_query = mysqli_query($sqlConnect, "UPDATE " . T_POSTS . " SET `boosted` = '0' WHERE `user_id` = {$user_id}");
+//         $mysql_query = mysqli_query($sqlConnect, "UPDATE " . T_POSTS . " SET `boosted` = '0' WHERE `page_id` IN (SELECT `page_id` FROM " . T_PAGES . " WHERE `user_id` = {$user_id})");
+//     }
+// }

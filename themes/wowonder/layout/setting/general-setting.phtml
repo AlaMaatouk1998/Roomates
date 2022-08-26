@@ -151,22 +151,7 @@
 				</div>
 					
 			</div>
-			<?php if ($wo['config']['pro'] == 1) { ?>
-				<div class="wow_form_fields">
-					<label for="pro_type"><?php echo $wo['lang']['member_type'];?></label>
-					<select id="pro_type" name="pro_type">
-						<?php $pros = Wo_GetProPackages();?>
-						<?php foreach ($pros as $key => $pro) {?>
-							<option value="<?php echo $key;?>" <?php echo ($pro['id'] == $wo['setting']['pro_type']) ? 'selected' : ''; ?>><?php echo $pro['name'];?></option>
-						<?php } ?>
-					</select>
-				</div>
-			<?php } ?>
-			<div class="wow_form_fields">
-				<label for="wallet"><?php echo $wo['lang']['wallet']; ?></label>  
-				<input name="wallet" id="wallet" type="text" value="<?php echo $wo['setting']['wallet']?>" autocomplete="off">
-			</div>
-		<?php } ?>
+			
 
          <!-- Select Basic -->
 		<?php if ($wo['config']['pro'] == 1 && $wo['setting']['pro_type'] != 0 && $wo['setting']['is_pro'] == 1 && empty($_GET['user'])) { ?>

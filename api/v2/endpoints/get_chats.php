@@ -350,26 +350,14 @@ if ($check_audio_calles !== false && is_array($check_audio_calles)) {
     $audio_call_user['avatar'] = $wo['audio_call_user']['avatar'];
     $audio_call_user['name'] = $wo['audio_call_user']['name'];
 }
-$agora_call = false;
-$agora_call_data = array();
-$check_agora_calls     = Wo_CheckFroInCallsAgora();
-if ($check_agora_calls !== false && is_array($check_agora_calls)) {
-    $agora_call = true;
-    $wo['agora_call_data'] = Wo_UserData($check_agora_calls['from_id']);
-    $agora_call_data['data'] = $check_agora_calls;
-    $agora_call_data['user_id'] = $wo['agora_call_data']['user_id'];
-    $agora_call_data['avatar'] = $wo['agora_call_data']['avatar'];
-    $agora_call_data['name'] = $wo['agora_call_data']['name'];
-}
+
 
 
 $response_data = array(
                     'api_status' => 200,
                     'data' => $array,
-                    'video_call' => $video_call,
-                    'video_call_user' => $video_call_user,
+                 
                     'audio_call' => $audio_call,
                     'audio_call_user' => $audio_call_user,
-                    'agora_call' => $agora_call,
-                    'agora_call_data' => $agora_call_data,
+                    
                 );

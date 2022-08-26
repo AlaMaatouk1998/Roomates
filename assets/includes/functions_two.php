@@ -1048,32 +1048,7 @@ function Wo_GetAd($type, $admin = true) {
     }
     return false;
 }
-function Wo_IsAdActive($type) {
-    global $sqlConnect;
-    $query_one     = "SELECT COUNT(`id`) AS `count` FROM " . T_ADS . " WHERE `type` = '{$type}' AND `active` = '1' ";
-    $sql_query_one = mysqli_query($sqlConnect, $query_one);
-    if (mysqli_num_rows($sql_query_one)) {
-        $fetched_data = mysqli_fetch_assoc($sql_query_one);
-        return $fetched_data["count"];
-    }
-    return false;
-}
-function Wo_UpdateAdActivation($type) {
-    global $sqlConnect, $wo;
-    if ($wo["loggedin"] == false) {
-        return false;
-    }
-    if (Wo_IsAdmin() === false && Wo_IsModerator() === false) {
-        return false;
-    }
-    if (Wo_IsAdActive($type)) {
-        $query_one = mysqli_query($sqlConnect, "UPDATE " . T_ADS . " SET `active` = '0' WHERE `type` = '{$type}'");
-        return "inactive";
-    } else {
-        $query_one = mysqli_query($sqlConnect, "UPDATE " . T_ADS . " SET `active` = '1' WHERE `type` = '{$type}'");
-        return "active";
-    }
-}
+
 function Wo_AddNewAnnouncement($text) {
     global $sqlConnect, $wo;
     if ($wo["loggedin"] == false) {
@@ -3320,196 +3295,196 @@ function Wo_GetAllProUsers() {
     }
     return $data;
 }
-function Wo_GetBanned($type = "") {
-    global $sqlConnect;
-    $data  = array();
-    $query = mysqli_query($sqlConnect, "SELECT * FROM " . T_BANNED_IPS . " ORDER BY id DESC");
-    if (mysqli_num_rows($query)) {
-        if ($type == "user") {
-            while ($fetched_data = mysqli_fetch_assoc($query)) {
-                if (filter_var($fetched_data["ip_address"], FILTER_VALIDATE_IP)) {
-                    $data[] = $fetched_data["ip_address"];
-                }
-            }
-        } else {
-            while ($fetched_data = mysqli_fetch_assoc($query)) {
-                $data[] = $fetched_data;
-            }
-        }
-    }
-    return $data;
-}
-function Wo_IsBanned($value = "") {
-    global $sqlConnect;
-    $value     = Wo_Secure($value);
-    $query_one = mysqli_query($sqlConnect, "SELECT COUNT(`id`) as count FROM " . T_BANNED_IPS . " WHERE `ip_address` = '{$value}'");
-    if (mysqli_num_rows($query_one)) {
-        $fetched_data = mysqli_fetch_assoc($query_one);
-        if ($fetched_data["count"] > 0) {
-            return true;
-        }
-    }
-    return false;
-}
-function Wo_BanNewIp($ip, $reason = "") {
-    global $sqlConnect;
-    $ip        = Wo_Secure($ip);
-    $reason    = Wo_Secure($reason);
-    $query_one = mysqli_query($sqlConnect, "SELECT COUNT(`id`) as count FROM " . T_BANNED_IPS . " WHERE `ip_address` = '{$ip}'");
-    if (mysqli_num_rows($query_one)) {
-        $fetched_data = mysqli_fetch_assoc($query_one);
-        if ($fetched_data["count"] > 0) {
-            return false;
-        }
-    }
-    $time      = time();
-    $query_two = mysqli_query($sqlConnect, "INSERT INTO " . T_BANNED_IPS . " (`ip_address`,`reason`,`time`) VALUES ('{$ip}','{$reason}','{$time}')");
-    if ($query_two) {
-        return true;
-    }
-}
-function Wo_IsIpBanned($id) {
-    global $sqlConnect;
-    $id        = Wo_Secure($id);
-    $query_one = mysqli_query($sqlConnect, "SELECT COUNT(`id`) as count FROM " . T_BANNED_IPS . " WHERE `id` = '{$id}'");
-    if (mysqli_num_rows($query_one)) {
-        $fetched_data = mysqli_fetch_assoc($query_one);
-        if ($fetched_data["count"] > 0) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-    return false;
-}
-function Wo_DeleteBanned($id) {
-    global $sqlConnect;
-    $id = Wo_Secure($id);
-    if (Wo_IsIpBanned($id) === false) {
-        return false;
-    }
-    $query_two = mysqli_query($sqlConnect, "DELETE FROM " . T_BANNED_IPS . " WHERE `id` = {$id}");
-    if ($query_two) {
-        return true;
-    }
-}
-function Wo_GameExists($id) {
-    global $sqlConnect;
-    if (empty($id)) {
-        return false;
-    }
-    $id    = Wo_Secure($id);
-    $query = mysqli_query($sqlConnect, "SELECT COUNT(`id`) FROM " . T_GAMES . " WHERE `id` = '{$id}'");
-    return Wo_Sql_Result($query, 0) == 1 ? true : false;
-}
-function Wo_GameData($game_id) {
-    global $wo, $sqlConnect, $cache;
-    if (empty($game_id) || !is_numeric($game_id) || $game_id < 1) {
-        return false;
-    }
-    $data           = array();
-    $game_id        = Wo_Secure($game_id);
-    $query_one      = "SELECT * FROM " . T_GAMES . " WHERE `id` = {$game_id}";
-    $hashed_game_id = md5($game_id);
-    if ($wo["config"]["cacheSystem"] == 1) {
-        $fetched_data = $cache->read($hashed_game_id . "_GAME_Data.tmp");
-        if (empty($fetched_data)) {
-            $sql = mysqli_query($sqlConnect, $query_one);
-            if (mysqli_num_rows($sql)) {
-                $fetched_data = mysqli_fetch_assoc($sql);
-                $cache->write($hashed_game_id . "_GAME_Data.tmp", $fetched_data);
-            }
-        }
-    } else {
-        $sql = mysqli_query($sqlConnect, $query_one);
-        if (mysqli_num_rows($sql)) {
-            $fetched_data = mysqli_fetch_assoc($sql);
-        }
-    }
-    if (empty($fetched_data)) {
-        return array();
-    }
-    $fetched_data["game_avatar"] = Wo_GetMedia($fetched_data["game_avatar"]);
-    $fetched_data["url"]         = Wo_SeoLink("index.php?link1=game&id=" . $fetched_data["id"]);
-    $fetched_data["name"]        = $fetched_data["game_name"];
-    $fetched_data["last_play"]   = Wo_LastPlay($fetched_data["id"]);
-    return $fetched_data;
-}
-function Wo_LastPlay($id) {
-    global $wo, $sqlConnect;
-    $data = array();
-    if ($wo["loggedin"] == false) {
-        return false;
-    }
-    if (empty($id) or !is_numeric($id) or $id < 1) {
-        return false;
-    }
-    $id      = Wo_Secure($id);
-    $user_id = Wo_Secure($wo["user"]["user_id"]);
-    $query   = mysqli_query($sqlConnect, "SELECT `last_play` FROM " . T_GAMES_PLAYERS . " WHERE `game_id` = {$id} AND `user_id` = {$user_id} AND `active` = '1' ");
-    if (mysqli_num_rows($query)) {
-        $fetched_data = mysqli_fetch_assoc($query);
-        return $fetched_data["last_play"];
-    }
-    return false;
-}
-function Wo_GetAllGames($limit = 5, $after = 0) {
-    global $wo, $sqlConnect;
-    $data      = array();
-    $query_one = " SELECT `id` FROM " . T_GAMES;
-    if (!empty($after) && is_numeric($after) && $after > 0) {
-        $query_one .= " WHERE `id` < " . Wo_Secure($after);
-    }
-    $query_one .= " ORDER BY `id` DESC";
-    if (isset($limit) and !empty($limit)) {
-        $query_one .= " LIMIT {$limit}";
-    }
-    $sql = mysqli_query($sqlConnect, $query_one);
-    if (mysqli_num_rows($sql)) {
-        while ($fetched_data = mysqli_fetch_assoc($sql)) {
-            $fetched_data            = Wo_GameData($fetched_data["id"]);
-            $fetched_data["players"] = Wo_CountGamePlayers($fetched_data["id"]);
-            $data[]                  = $fetched_data;
-        }
-    }
-    return $data;
-}
-function Wo_AddGame($data = array()) {
-    global $wo, $sqlConnect;
-    if ($wo["loggedin"] == false) {
-        return false;
-    }
-    if (empty($data)) {
-        return false;
-    }
-    $fields = "`" . implode("`, `", array_keys($data)) . "`";
-    $data   = '\'' . implode('\', \'', $data) . '\'';
-    $query  = mysqli_query($sqlConnect, "INSERT INTO " . T_GAMES . " ({$fields}) VALUES ({$data})");
-    if ($query) {
-        return true;
-    } else {
-        return false;
-    }
-}
-function Wo_GetAllGifts($limit = 5, $after = 0) {
-    global $wo, $sqlConnect;
-    $data      = array();
-    $query_one = " SELECT * FROM " . T_GIFTS;
-    if (!empty($after) && is_numeric($after) && $after > 0) {
-        $query_one .= " WHERE `id` < " . Wo_Secure($after);
-    }
-    $query_one .= " ORDER BY `id` DESC";
-    if (isset($limit) and !empty($limit)) {
-        $query_one .= " LIMIT {$limit}";
-    }
-    $sql = mysqli_query($sqlConnect, $query_one);
-    if (mysqli_num_rows($sql)) {
-        while ($fetched_data = mysqli_fetch_assoc($sql)) {
-            $data[] = $fetched_data;
-        }
-    }
-    return $data;
-}
+// function Wo_GetBanned($type = "") {
+//     global $sqlConnect;
+//     $data  = array();
+//     $query = mysqli_query($sqlConnect, "SELECT * FROM " . T_BANNED_IPS . " ORDER BY id DESC");
+//     if (mysqli_num_rows($query)) {
+//         if ($type == "user") {
+//             while ($fetched_data = mysqli_fetch_assoc($query)) {
+//                 if (filter_var($fetched_data["ip_address"], FILTER_VALIDATE_IP)) {
+//                     $data[] = $fetched_data["ip_address"];
+//                 }
+//             }
+//         } else {
+//             while ($fetched_data = mysqli_fetch_assoc($query)) {
+//                 $data[] = $fetched_data;
+//             }
+//         }
+//     }
+//     return $data;
+// }
+// function Wo_IsBanned($value = "") {
+//     global $sqlConnect;
+//     $value     = Wo_Secure($value);
+//     $query_one = mysqli_query($sqlConnect, "SELECT COUNT(`id`) as count FROM " . T_BANNED_IPS . " WHERE `ip_address` = '{$value}'");
+//     if (mysqli_num_rows($query_one)) {
+//         $fetched_data = mysqli_fetch_assoc($query_one);
+//         if ($fetched_data["count"] > 0) {
+//             return true;
+//         }
+//     }
+//     return false;
+// }
+// function Wo_BanNewIp($ip, $reason = "") {
+//     global $sqlConnect;
+//     $ip        = Wo_Secure($ip);
+//     $reason    = Wo_Secure($reason);
+//     $query_one = mysqli_query($sqlConnect, "SELECT COUNT(`id`) as count FROM " . T_BANNED_IPS . " WHERE `ip_address` = '{$ip}'");
+//     if (mysqli_num_rows($query_one)) {
+//         $fetched_data = mysqli_fetch_assoc($query_one);
+//         if ($fetched_data["count"] > 0) {
+//             return false;
+//         }
+//     }
+//     $time      = time();
+//     $query_two = mysqli_query($sqlConnect, "INSERT INTO " . T_BANNED_IPS . " (`ip_address`,`reason`,`time`) VALUES ('{$ip}','{$reason}','{$time}')");
+//     if ($query_two) {
+//         return true;
+//     }
+// }
+// function Wo_IsIpBanned($id) {
+//     global $sqlConnect;
+//     $id        = Wo_Secure($id);
+//     $query_one = mysqli_query($sqlConnect, "SELECT COUNT(`id`) as count FROM " . T_BANNED_IPS . " WHERE `id` = '{$id}'");
+//     if (mysqli_num_rows($query_one)) {
+//         $fetched_data = mysqli_fetch_assoc($query_one);
+//         if ($fetched_data["count"] > 0) {
+//             return true;
+//         } else {
+//             return false;
+//         }
+//     }
+//     return false;
+// }
+// function Wo_DeleteBanned($id) {
+//     global $sqlConnect;
+//     $id = Wo_Secure($id);
+//     if (Wo_IsIpBanned($id) === false) {
+//         return false;
+//     }
+//     $query_two = mysqli_query($sqlConnect, "DELETE FROM " . T_BANNED_IPS . " WHERE `id` = {$id}");
+//     if ($query_two) {
+//         return true;
+//     }
+// }
+// function Wo_GameExists($id) {
+//     global $sqlConnect;
+//     if (empty($id)) {
+//         return false;
+//     }
+//     $id    = Wo_Secure($id);
+//     $query = mysqli_query($sqlConnect, "SELECT COUNT(`id`) FROM " . T_GAMES . " WHERE `id` = '{$id}'");
+//     return Wo_Sql_Result($query, 0) == 1 ? true : false;
+// }
+// function Wo_GameData($game_id) {
+//     global $wo, $sqlConnect, $cache;
+//     if (empty($game_id) || !is_numeric($game_id) || $game_id < 1) {
+//         return false;
+//     }
+//     $data           = array();
+//     $game_id        = Wo_Secure($game_id);
+//     $query_one      = "SELECT * FROM " . T_GAMES . " WHERE `id` = {$game_id}";
+//     $hashed_game_id = md5($game_id);
+//     if ($wo["config"]["cacheSystem"] == 1) {
+//         $fetched_data = $cache->read($hashed_game_id . "_GAME_Data.tmp");
+//         if (empty($fetched_data)) {
+//             $sql = mysqli_query($sqlConnect, $query_one);
+//             if (mysqli_num_rows($sql)) {
+//                 $fetched_data = mysqli_fetch_assoc($sql);
+//                 $cache->write($hashed_game_id . "_GAME_Data.tmp", $fetched_data);
+//             }
+//         }
+//     } else {
+//         $sql = mysqli_query($sqlConnect, $query_one);
+//         if (mysqli_num_rows($sql)) {
+//             $fetched_data = mysqli_fetch_assoc($sql);
+//         }
+//     }
+//     if (empty($fetched_data)) {
+//         return array();
+//     }
+//     $fetched_data["game_avatar"] = Wo_GetMedia($fetched_data["game_avatar"]);
+//     $fetched_data["url"]         = Wo_SeoLink("index.php?link1=game&id=" . $fetched_data["id"]);
+//     $fetched_data["name"]        = $fetched_data["game_name"];
+//     $fetched_data["last_play"]   = Wo_LastPlay($fetched_data["id"]);
+//     return $fetched_data;
+// }
+// function Wo_LastPlay($id) {
+//     global $wo, $sqlConnect;
+//     $data = array();
+//     if ($wo["loggedin"] == false) {
+//         return false;
+//     }
+//     if (empty($id) or !is_numeric($id) or $id < 1) {
+//         return false;
+//     }
+//     $id      = Wo_Secure($id);
+//     $user_id = Wo_Secure($wo["user"]["user_id"]);
+//     $query   = mysqli_query($sqlConnect, "SELECT `last_play` FROM " . T_GAMES_PLAYERS . " WHERE `game_id` = {$id} AND `user_id` = {$user_id} AND `active` = '1' ");
+//     if (mysqli_num_rows($query)) {
+//         $fetched_data = mysqli_fetch_assoc($query);
+//         return $fetched_data["last_play"];
+//     }
+//     return false;
+// }
+// function Wo_GetAllGames($limit = 5, $after = 0) {
+//     global $wo, $sqlConnect;
+//     $data      = array();
+//     $query_one = " SELECT `id` FROM " . T_GAMES;
+//     if (!empty($after) && is_numeric($after) && $after > 0) {
+//         $query_one .= " WHERE `id` < " . Wo_Secure($after);
+//     }
+//     $query_one .= " ORDER BY `id` DESC";
+//     if (isset($limit) and !empty($limit)) {
+//         $query_one .= " LIMIT {$limit}";
+//     }
+//     $sql = mysqli_query($sqlConnect, $query_one);
+//     if (mysqli_num_rows($sql)) {
+//         while ($fetched_data = mysqli_fetch_assoc($sql)) {
+//             $fetched_data            = Wo_GameData($fetched_data["id"]);
+//             $fetched_data["players"] = Wo_CountGamePlayers($fetched_data["id"]);
+//             $data[]                  = $fetched_data;
+//         }
+//     }
+//     return $data;
+// }
+// function Wo_AddGame($data = array()) {
+//     global $wo, $sqlConnect;
+//     if ($wo["loggedin"] == false) {
+//         return false;
+//     }
+//     if (empty($data)) {
+//         return false;
+//     }
+//     $fields = "`" . implode("`, `", array_keys($data)) . "`";
+//     $data   = '\'' . implode('\', \'', $data) . '\'';
+//     $query  = mysqli_query($sqlConnect, "INSERT INTO " . T_GAMES . " ({$fields}) VALUES ({$data})");
+//     if ($query) {
+//         return true;
+//     } else {
+//         return false;
+//     }
+// }
+// function Wo_GetAllGifts($limit = 5, $after = 0) {
+//     global $wo, $sqlConnect;
+//     $data      = array();
+//     $query_one = " SELECT * FROM " . T_GIFTS;
+//     if (!empty($after) && is_numeric($after) && $after > 0) {
+//         $query_one .= " WHERE `id` < " . Wo_Secure($after);
+//     }
+//     $query_one .= " ORDER BY `id` DESC";
+//     if (isset($limit) and !empty($limit)) {
+//         $query_one .= " LIMIT {$limit}";
+//     }
+//     $sql = mysqli_query($sqlConnect, $query_one);
+//     if (mysqli_num_rows($sql)) {
+//         while ($fetched_data = mysqli_fetch_assoc($sql)) {
+//             $data[] = $fetched_data;
+//         }
+//     }
+//     return $data;
+// }
 function Wo_GetAllStickers($limit = 5, $after = 0) {
     global $wo, $sqlConnect;
     $data      = array();
@@ -3529,90 +3504,90 @@ function Wo_GetAllStickers($limit = 5, $after = 0) {
     }
     return $data;
 }
-function Wo_IsPlayingGame($id) {
-    global $wo, $sqlConnect;
-    $data = array();
-    if ($wo["loggedin"] == false) {
-        return false;
-    }
-    if (empty($id) or !is_numeric($id) or $id < 1) {
-        return false;
-    }
-    $id      = Wo_Secure($id);
-    $user_id = Wo_Secure($wo["user"]["user_id"]);
-    $query   = mysqli_query($sqlConnect, "SELECT COUNT(`id`) AS count FROM " . T_GAMES_PLAYERS . " WHERE `game_id` = {$id} AND `user_id` = {$user_id} AND `active` = '1' ");
-    if (mysqli_num_rows($query)) {
-        $fetched_data = mysqli_fetch_assoc($query);
-        if ($fetched_data["count"] > 0) {
-            return true;
-        }
-    }
-    return false;
-}
-function Wo_AddPlayGame($id) {
-    global $wo, $sqlConnect;
-    $data = array();
-    if ($wo["loggedin"] == false) {
-        return false;
-    }
-    if (empty($id) or !is_numeric($id) or $id < 1) {
-        return false;
-    }
-    $id      = Wo_Secure($id);
-    $user_id = Wo_Secure($wo["user"]["user_id"]);
-    $time    = time();
-    if (Wo_IsPlayingGame($id) === true) {
-        $query_one = mysqli_query($sqlConnect, "UPDATE " . T_GAMES_PLAYERS . " set `last_play` = {$time} WHERE `game_id` = {$id} AND `user_id` = {$user_id}");
-        return false;
-    }
-    $query_one = mysqli_query($sqlConnect, "INSERT INTO " . T_GAMES_PLAYERS . " (`game_id`, `user_id`, `active`, `last_play`) VALUES ({$id}, {$user_id}, '1', {$time})");
-    if ($query_one) {
-        return true;
-    }
-}
-function Wo_CountGamePlayers($id) {
-    global $wo, $sqlConnect;
-    $data = array();
-    if (empty($id) or !is_numeric($id) or $id < 1) {
-        return false;
-    }
-    $id    = Wo_Secure($id);
-    $query = mysqli_query($sqlConnect, "SELECT COUNT(`id`) AS count FROM " . T_GAMES_PLAYERS . " WHERE `game_id` = {$id} AND `active` = '1'");
-    if (mysqli_num_rows($query)) {
-        $fetched_data = mysqli_fetch_assoc($query);
-        return $fetched_data["count"];
-    }
-    return false;
-}
-function Wo_GetMyGames($limit = 0, $offset = 0) {
-    global $sqlConnect, $wo;
-    if ($wo["loggedin"] == false) {
-        return false;
-    }
-    $data    = array();
-    $user_id = Wo_Secure($wo["user"]["user_id"]);
-    $offset_ = "";
-    if (!empty($offset) && is_numeric($offset) && $offset > 0) {
-        $offset_ .= " AND `id` < " . Wo_Secure($offset);
-    }
-    $limit_ = "";
-    if (!empty($limit)) {
-        $limit  = Wo_Secure($limit);
-        $limit_ = " LIMIT {$limit}";
-    }
-    $query_text = "SELECT `game_id`,`id` FROM " . T_GAMES_PLAYERS . " WHERE `user_id` = {$user_id} $offset_ ORDER BY `last_play` DESC $limit_";
-    $query_one  = mysqli_query($sqlConnect, $query_text);
-    if (mysqli_num_rows($query_one)) {
-        while ($fetched_data = mysqli_fetch_assoc($query_one)) {
-            if (is_array($fetched_data)) {
-                $game_data              = Wo_GameData($fetched_data["game_id"]);
-                $game_data["offset_id"] = $fetched_data["id"];
-                $data[]                 = $game_data;
-            }
-        }
-    }
-    return $data;
-}
+// function Wo_IsPlayingGame($id) {
+//     global $wo, $sqlConnect;
+//     $data = array();
+//     if ($wo["loggedin"] == false) {
+//         return false;
+//     }
+//     if (empty($id) or !is_numeric($id) or $id < 1) {
+//         return false;
+//     }
+//     $id      = Wo_Secure($id);
+//     $user_id = Wo_Secure($wo["user"]["user_id"]);
+//     $query   = mysqli_query($sqlConnect, "SELECT COUNT(`id`) AS count FROM " . T_GAMES_PLAYERS . " WHERE `game_id` = {$id} AND `user_id` = {$user_id} AND `active` = '1' ");
+//     if (mysqli_num_rows($query)) {
+//         $fetched_data = mysqli_fetch_assoc($query);
+//         if ($fetched_data["count"] > 0) {
+//             return true;
+//         }
+//     }
+//     return false;
+// }
+// function Wo_AddPlayGame($id) {
+//     global $wo, $sqlConnect;
+//     $data = array();
+//     if ($wo["loggedin"] == false) {
+//         return false;
+//     }
+//     if (empty($id) or !is_numeric($id) or $id < 1) {
+//         return false;
+//     }
+//     $id      = Wo_Secure($id);
+//     $user_id = Wo_Secure($wo["user"]["user_id"]);
+//     $time    = time();
+//     if (Wo_IsPlayingGame($id) === true) {
+//         $query_one = mysqli_query($sqlConnect, "UPDATE " . T_GAMES_PLAYERS . " set `last_play` = {$time} WHERE `game_id` = {$id} AND `user_id` = {$user_id}");
+//         return false;
+//     }
+//     $query_one = mysqli_query($sqlConnect, "INSERT INTO " . T_GAMES_PLAYERS . " (`game_id`, `user_id`, `active`, `last_play`) VALUES ({$id}, {$user_id}, '1', {$time})");
+//     if ($query_one) {
+//         return true;
+//     }
+// }
+// function Wo_CountGamePlayers($id) {
+//     global $wo, $sqlConnect;
+//     $data = array();
+//     if (empty($id) or !is_numeric($id) or $id < 1) {
+//         return false;
+//     }
+//     $id    = Wo_Secure($id);
+//     $query = mysqli_query($sqlConnect, "SELECT COUNT(`id`) AS count FROM " . T_GAMES_PLAYERS . " WHERE `game_id` = {$id} AND `active` = '1'");
+//     if (mysqli_num_rows($query)) {
+//         $fetched_data = mysqli_fetch_assoc($query);
+//         return $fetched_data["count"];
+//     }
+//     return false;
+// }
+// function Wo_GetMyGames($limit = 0, $offset = 0) {
+//     global $sqlConnect, $wo;
+//     if ($wo["loggedin"] == false) {
+//         return false;
+//     }
+//     $data    = array();
+//     $user_id = Wo_Secure($wo["user"]["user_id"]);
+//     $offset_ = "";
+//     if (!empty($offset) && is_numeric($offset) && $offset > 0) {
+//         $offset_ .= " AND `id` < " . Wo_Secure($offset);
+//     }
+//     $limit_ = "";
+//     if (!empty($limit)) {
+//         $limit  = Wo_Secure($limit);
+//         $limit_ = " LIMIT {$limit}";
+//     }
+//     $query_text = "SELECT `game_id`,`id` FROM " . T_GAMES_PLAYERS . " WHERE `user_id` = {$user_id} $offset_ ORDER BY `last_play` DESC $limit_";
+//     $query_one  = mysqli_query($sqlConnect, $query_text);
+//     if (mysqli_num_rows($query_one)) {
+//         while ($fetched_data = mysqli_fetch_assoc($query_one)) {
+//             if (is_array($fetched_data)) {
+//                 $game_data              = Wo_GameData($fetched_data["game_id"]);
+//                 $game_data["offset_id"] = $fetched_data["id"];
+//                 $data[]                 = $game_data;
+//             }
+//         }
+//     }
+//     return $data;
+// }
 function Wo_IsNameExist($username, $active = 0) {
     global $wo, $sqlConnect;
     $data = array();
@@ -6003,45 +5978,7 @@ function Wo_GetAvUpgrades($user_id) {
     }
     return $can_see;
 }
-function Wo_GetProPackages() {
-    global $wo;
-    $free_member   = $wo["lang"]["free_member"];
-    $star_member   = $wo["lang"]["star"] . " " . $wo["lang"]["member"];
-    $hot_member    = $wo["lang"]["hot"] . " " . $wo["lang"]["member"];
-    $ultima_member = $wo["lang"]["ultima"] . " " . $wo["lang"]["member"];
-    $vip_member    = $wo["lang"]["vip"] . " " . $wo["lang"]["member"];
-    $data          = array(
-        "free" => array(
-            "id" => 0,
-            "name" => $free_member
-        )
-    );
-    if ($wo["pro_packages"]["star"]["status"] == 1) {
-        $data["star"] = array(
-            "id" => 1,
-            "name" => $star_member
-        );
-    }
-    if ($wo["pro_packages"]["hot"]["status"] == 1) {
-        $data["hot"] = array(
-            "id" => 2,
-            "name" => $hot_member
-        );
-    }
-    if ($wo["pro_packages"]["ultima"]["status"] == 1) {
-        $data["ultima"] = array(
-            "id" => 3,
-            "name" => $ultima_member
-        );
-    }
-    if ($wo["pro_packages"]["vip"]["status"] == 1) {
-        $data["vip"] = array(
-            "id" => 4,
-            "name" => $vip_member
-        );
-    }
-    return $data;
-}
+
 require './assets/libraries/PayPal/vendor/composer/autoload_psr4.php';
 function Wo_CreatePayment($payment_type = 1) {
     global $wo, $sqlConnect;
@@ -6783,75 +6720,7 @@ function Wo_DeleteField($id) {
     }
     return false;
 }
-function Wo_DeleteProMemebership() {
-    global $wo, $sqlConnect, $star_package_duration, $hot_package_duration, $ultima_package_duration, $vip_package_duration;
-    $data      = array();
-    $query_one = "SELECT `user_id`, `pro_type`, `pro_time` FROM " . T_USERS . " WHERE `is_pro` = '1' ORDER BY `user_id` ASC";
-    $sql       = mysqli_query($sqlConnect, $query_one);
-    if (mysqli_num_rows($sql)) {
-        while ($fetched_data = mysqli_fetch_assoc($sql)) {
-            $update_data = false;
-            switch ($fetched_data["pro_type"]) {
-                case "1":
-                    if ($wo["pro_packages"]["star"]["time"] != "unlimited") {
-                        if ($fetched_data["pro_time"] < time() - $star_package_duration) {
-                            $update_data = true;
-                        }
-                    }
-                    break;
-                case "2":
-                    if ($wo["pro_packages"]["hot"]["time"] != "unlimited") {
-                        if ($fetched_data["pro_time"] < time() - $hot_package_duration) {
-                            $update_data = true;
-                        }
-                    }
-                    break;
-                case "3":
-                    if ($wo["pro_packages"]["ultima"]["time"] != "unlimited") {
-                        if ($fetched_data["pro_time"] < time() - $ultima_package_duration) {
-                            $update_data = true;
-                        }
-                    }
-                    break;
-                case "4":
-                    if ($wo["pro_packages"]["vip"]["time"] != "unlimited") {
-                        if ($fetched_data["pro_time"] < time() - $vip_package_duration) {
-                            $update_data = true;
-                        }
-                    }
-                    break;
-            }
-            if ($update_data == true) {
-                $update      = Wo_UpdateUserData($fetched_data["user_id"], array(
-                    "is_pro" => 0
-                ));
-                $user_id     = $fetched_data["user_id"];
-                $mysql_query = mysqli_query($sqlConnect, "UPDATE " . T_PAGES . " SET `boosted` = '0' WHERE `user_id` = {$user_id}");
-                $mysql_query = mysqli_query($sqlConnect, "UPDATE " . T_POSTS . " SET `boosted` = '0' WHERE `user_id` = {$user_id}");
-                $mysql_query = mysqli_query($sqlConnect, "UPDATE " . T_POSTS . " SET `boosted` = '0' WHERE `page_id` IN (SELECT `page_id` FROM " . T_PAGES . " WHERE `user_id` = {$user_id})");
-            }
-        }
-    }
-    return true;
-}
-function Wo_GetPopularGames($limit = 10, $after = 0) {
-    global $wo, $sqlConnect;
-    $data = array();
-    $q    = "";
-    if (!empty($after) && is_numeric($after)) {
-        $after = Wo_Secure($after);
-        $q     = " HAVING count < " . $after;
-    }
-    $sql = mysqli_query($sqlConnect, "SELECT game_id, COUNT(`user_id`) AS count FROM " . T_GAMES_PLAYERS . " WHERE `active` = '1' GROUP BY `game_id` " . $q . " ORDER BY count DESC LIMIT " . $limit);
-    if (mysqli_num_rows($sql)) {
-        while ($fetched_data = mysqli_fetch_assoc($sql)) {
-            $fetched_data            = Wo_GameData($fetched_data["game_id"]);
-            $fetched_data["players"] = Wo_CountGamePlayers($fetched_data["id"]);
-            $data[]                  = $fetched_data;
-        }
-    }
-    return $data;
-}
+
 function Wo_GetGenders($lang = "english", $langs) {
     global $wo, $db;
     if (!empty($lang) && in_array($lang, $langs)) {

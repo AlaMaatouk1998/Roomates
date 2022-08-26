@@ -83,7 +83,7 @@ if ($type == 'timeline' && $wo['loggedin'] == true) {
     $is_blocked = $wo['is_blocked'] = Wo_IsBlocked($user_id);
     if (isset($_GET['block_user']) && !empty($_GET['block_user'])) {
         if ($_GET['block_user'] == 'block' && $is_blocked === false && Wo_IsAdmin($user_id) === false && Wo_IsModerator($user_id) === false) {
-            $block = Wo_RegisterBlock($user_id);
+            $block = 0;
             if ($block) {
                 if (!empty($_GET['redirect'])) {
                     header("Location: " . Wo_SeoLink("index.php?link1={$_GET['redirect']}"));
@@ -93,7 +93,7 @@ if ($type == 'timeline' && $wo['loggedin'] == true) {
                 exit();
             }
         } else if ($_GET['block_user'] == 'un-block' && $is_blocked === true) {
-            $unblock = Wo_RemoveBlock($user_id);
+            $unblock = 0;
             if ($unblock) {
                 header("Location: " . $wo['user_profile']['url']);
                 exit();

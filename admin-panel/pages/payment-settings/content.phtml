@@ -23,85 +23,8 @@
     <div class="row">
       <div class="col-lg-6 col-md-6">
             <div class="card">
-                <div class="card-body">
 
-                    <h6 class="card-title">Configure PayPal Payment Method <div class="pull-right mobile-hidden"><a href="https://developer.paypal.com/home" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/b/b5/PayPal.svg" style="width: 100px;"></a></div></h6>
-                    <form class="paypal-settings" method="POST">
-                        <div class="float-left">
-                            <label for="paypal" class="main-label">PayPal Payment Method</label>
-                            <br><small class="admin-info">Enable PayPal to receive payments from ads and pro packages.</small>
-                        </div>
-                        <div class="form-group float-right switcher">
-                            <input type="hidden" name="paypal" value="0" />
-                            <input type="checkbox" name="paypal" id="chck-paypal" value="1" <?php echo ($wo['config']['paypal'] == 'yes') ? 'checked': '';?>>
-                            <label for="chck-paypal" class="check-trail"><span class="check-handler"></span></label>
-                        </div>
-                        <div class="clearfix"></div>
-                        <hr>
-                        <div class="float-left">
-                            <label for="transaction_log" class="main-label">Show Transaction Logs (All Payment Methods)</label>
-                        <br><small class="admin-info">Show transaction history on user settings page.</small>
-                        </div>
-                        <div class="form-group float-right switcher">
-                            <input type="hidden" name="transaction_log" value="0" />
-                            <input type="checkbox" name="transaction_log" id="chck-transaction_log" value="1" <?php echo ($wo['config']['transaction_log'] == 'yes') ? 'checked': '';?>>
-                            <label for="chck-transaction_log" class="check-trail"><span class="check-handler"></span></label>
-                        </div>
-                        <div class="clearfix"></div>
-                        <hr>
-                        <label for="paypal_mode">PayPal Mode</label>
-                        <select class="form-control show-tick" id="paypal_mode" name="paypal_mode">
-                          <option value="live" <?php echo ($wo['config']['paypal_mode'] == 'live')  ? ' selected': '';?>>Live</option>
-                          <option value="sandbox" <?php echo ($wo['config']['paypal_mode'] == 'sandbox')  ? ' selected': '';?>>SandBox</option>
-                        </select>
-                        <small class="admin-info">Choose the mode your application is using, for testing use the SandBox mode.</small>
-                        <div class="clearfix"></div>
-                        <div class="form-group form-float">
-                            <div class="form-line">
-                                <label class="form-label">PayPal Clinet ID</label>
-                                <input type="text" id="paypal_id" name="paypal_id" class="form-control" value="<?php echo $wo['config']['paypal_id'];?>">
-                                <small class="admin-info">Set your PayPal application ID.</small>
-                            </div>
-                        </div>
-                        <div class="form-group form-float">
-                            <div class="form-line">
-                                <label class="form-label">PayPal Secret Key</label>
-                                <input type="text" id="paypal_secret" name="paypal_secret" class="form-control" value="<?php echo $wo['config']['paypal_secret'];?>">
-                                <small class="admin-info">Set your PayPal application secret key.</small>
-                            </div>
-                        </div>
-                        <label for="paypal_currency">PayPal Currency</label>
-                        <select class="form-control show-tick" id="paypal_currency" name="paypal_currency">
-                          <option value="USD" <?php echo ($wo['config']['paypal_currency'] == 'USD')  ? ' selected': '';?>>USD</option>
-                          <option value="EUR" <?php echo ($wo['config']['paypal_currency'] == 'EUR')  ? ' selected': '';?>>EUR</option>
-                          <option value="AUD" <?php echo ($wo['config']['paypal_currency'] == 'AUD')  ? ' selected': '';?>>AUD</option>
-                          <option value="BRL" <?php echo ($wo['config']['paypal_currency'] == 'BRL')  ? ' selected': '';?>>BRL</option>
-                          <option value="CAD" <?php echo ($wo['config']['paypal_currency'] == 'CAD')  ? ' selected': '';?>>CAD</option>
-                          <option value="CZK" <?php echo ($wo['config']['paypal_currency'] == 'CZK')  ? ' selected': '';?>>CZK</option>
-                          <option value="DKK" <?php echo ($wo['config']['paypal_currency'] == 'DKK')  ? ' selected': '';?>>DKK</option>
-                          <option value="HKD" <?php echo ($wo['config']['paypal_currency'] == 'HKD')  ? ' selected': '';?>>HKD</option>
-                          <option value="HUF" <?php echo ($wo['config']['paypal_currency'] == 'HUF')  ? ' selected': '';?>>HUF</option>
-                          <option value="INR" <?php echo ($wo['config']['paypal_currency'] == 'INR')  ? ' selected': '';?>>INR</option>
-                          <option value="ILS" <?php echo ($wo['config']['paypal_currency'] == 'ILS')  ? ' selected': '';?>>ILS</option>
-                          <option value="JPY" <?php echo ($wo['config']['paypal_currency'] == 'JPY')  ? ' selected': '';?>>JPY</option>
-                          <option value="MYR" <?php echo ($wo['config']['paypal_currency'] == 'MYR')  ? ' selected': '';?>>MYR</option>
-                          <option value="MXN" <?php echo ($wo['config']['paypal_currency'] == 'MXN')  ? ' selected': '';?>>MXN</option>
-                          <option value="TWD" <?php echo ($wo['config']['paypal_currency'] == 'TWD')  ? ' selected': '';?>>TWD</option>
-                          <option value="NZD" <?php echo ($wo['config']['paypal_currency'] == 'NZD')  ? ' selected': '';?>>NZD</option>
-                          <option value="NOK" <?php echo ($wo['config']['paypal_currency'] == 'NOK')  ? ' selected': '';?>>NOK</option>
-                          <option value="PHP" <?php echo ($wo['config']['paypal_currency'] == 'PHP')  ? ' selected': '';?>>PHP</option>
-                          <option value="PLN" <?php echo ($wo['config']['paypal_currency'] == 'PLN')  ? ' selected': '';?>>PLN</option>
-                          <option value="GBP" <?php echo ($wo['config']['paypal_currency'] == 'GBP')  ? ' selected': '';?>>GBP</option>
-                          <option value="RUB" <?php echo ($wo['config']['paypal_currency'] == 'RUB')  ? ' selected': '';?>>RUB</option>
-                          <option value="SGD" <?php echo ($wo['config']['paypal_currency'] == 'SGD')  ? ' selected': '';?>>SGD</option>
-                          <option value="SEK" <?php echo ($wo['config']['paypal_currency'] == 'SEK')  ? ' selected': '';?>>SEK</option>
-                          <option value="CHF" <?php echo ($wo['config']['paypal_currency'] == 'CHF')  ? ' selected': '';?>>CHF</option>
-                          <option value="THB" <?php echo ($wo['config']['paypal_currency'] == 'THB')  ? ' selected': '';?>>THB</option>
-                        </select>
-                        <small class="admin-info">Set your PayPal currency, this will be used only on PayPal.</small>
-                        <input type="hidden" name="hash_id" value="<?php echo Wo_CreateSession();?>">
-                    </form>
-                </div>
+                
             </div>
             <div class="card">
                 <div class="card-body">

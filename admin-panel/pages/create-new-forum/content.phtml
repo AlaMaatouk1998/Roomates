@@ -38,13 +38,7 @@
                                 <textarea name="description" id="description" class="form-control" cols="30" rows="3"></textarea>
                             </div>
                         </div>
-                        <label for="section">Section</label>
-                        <select class="form-control show-tick" id="section" name="section">
-                          <?php foreach (Wo_GetForumSec(array('forums'=>false,'limit'=>500)) as $section): ?>
-							<option value="<?php echo $section['id']; ?>">
-								<?php echo $section['section_name']; ?>
-							</option>
-						<?php endforeach ?>
+                      foreach ?>
                         </select>
                         <div class="clearfix"></div>
                         <br><br>

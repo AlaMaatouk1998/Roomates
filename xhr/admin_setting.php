@@ -1233,21 +1233,7 @@ if ($f == 'admin_setting' AND (Wo_IsAdmin() || Wo_IsModerator())) {
             exit();
         }
     }
-    if ($s == 'remove_multi_ban') {
-        if (!empty($_POST['ids'])) {
-            foreach ($_POST['ids'] as $key => $value) {
-                if (!empty($value)) {
-                    Wo_DeleteBanned(Wo_Secure($value));
-                }
-            }
-            $data = array(
-                'status' => 200
-            );
-            header("Content-type: application/json");
-            echo json_encode($data);
-            exit();
-        }
-    }
+  
     if ($s == 'remove_multi_code') {
         if (!empty($_POST['ids'])) {
             foreach ($_POST['ids'] as $key => $value) {
@@ -1350,21 +1336,7 @@ if ($f == 'admin_setting' AND (Wo_IsAdmin() || Wo_IsModerator())) {
             exit();
         }
     }
-    if ($s == 'remove_multi_game') {
-        if (!empty($_POST['ids'])) {
-            foreach ($_POST['ids'] as $key => $value) {
-                if (!empty($value) && is_numeric($value) && $value > 0) {
-                    Wo_DeleteGame(Wo_Secure($value));
-                }
-            }
-            $data = array(
-                'status' => 200
-            );
-            header("Content-type: application/json");
-            echo json_encode($data);
-            exit();
-        }
-    }
+   
     if ($s == 'remove_multi_reply') {
         if (!empty($_POST['ids'])) {
             foreach ($_POST['ids'] as $key => $value) {
@@ -1380,21 +1352,7 @@ if ($f == 'admin_setting' AND (Wo_IsAdmin() || Wo_IsModerator())) {
             exit();
         }
     }
-    if ($s == 'remove_multi_movies') {
-        if (!empty($_POST['ids'])) {
-            foreach ($_POST['ids'] as $key => $value) {
-                if (!empty($value) && is_numeric($value) && $value > 0) {
-                    Wo_DeleteFilm(Wo_Secure($value));
-                }
-            }
-            $data = array(
-                'status' => 200
-            );
-            header("Content-type: application/json");
-            echo json_encode($data);
-            exit();
-        }
-    }
+   
     if ($s == 'remove_multi_thread') {
         if (!empty($_POST['ids'])) {
             foreach ($_POST['ids'] as $key => $value) {
@@ -1566,21 +1524,7 @@ if ($f == 'admin_setting' AND (Wo_IsAdmin() || Wo_IsModerator())) {
             exit();
         }
     }
-    if ($s == 'remove_multi_gift') {
-        if (!empty($_POST['ids'])) {
-            foreach ($_POST['ids'] as $key => $value) {
-                if (!empty($value) && is_numeric($value) && $value > 0) {
-                    Wo_DeleteGift($value);
-                }
-            }
-            $data = array(
-                'status' => 200
-            );
-            header("Content-type: application/json");
-            echo json_encode($data);
-            exit();
-        }
-    }
+  
     if ($s == 'remove_multi_sticker') {
         if (!empty($_POST['ids'])) {
             foreach ($_POST['ids'] as $key => $value) {
@@ -3902,30 +3846,8 @@ if ($f == 'admin_setting' AND (Wo_IsAdmin() || Wo_IsModerator())) {
         echo json_encode($data);
         exit();
     }
-    if ($s == 'delete_game') {
-        if (!empty($_GET['game_id'])) {
-            if (Wo_DeleteGame($_GET['game_id']) === true) {
-                $data = array(
-                    'status' => 200
-                );
-            }
-        }
-        header("Content-type: application/json");
-        echo json_encode($data);
-        exit();
-    }
-    if ($s == 'delete_gift') {
-        if (!empty($_GET['gift_id'])) {
-            if (Wo_DeleteGift($_GET['gift_id']) === true) {
-                $data = array(
-                    'status' => 200
-                );
-            }
-        }
-        header("Content-type: application/json");
-        echo json_encode($data);
-        exit();
-    }
+   
+  
     if ($s == 'delete_sticker') {
         if (!empty($_GET['sticker_id'])) {
             if (Wo_DeleteSticker($_GET['sticker_id']) === true) {
@@ -4235,22 +4157,7 @@ if ($f == 'admin_setting' AND (Wo_IsAdmin() || Wo_IsModerator())) {
         echo json_encode($data);
         exit();
     }
-    if ($s == 'update_ads_status') {
-        if (!empty($_GET['type'])) {
-            if (Wo_UpdateAdActivation($_GET['type']) == 'active') {
-                $data = array(
-                    'status' => 200
-                );
-            } else {
-                $data = array(
-                    'status' => 300
-                );
-            }
-        }
-        header("Content-type: application/json");
-        echo json_encode($data);
-        exit();
-    }
+   
     if ($s == 'add_reaction') {
         $data['status']  = 400;
         $data['message'] = 'Please check your details';

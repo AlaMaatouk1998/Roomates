@@ -35,15 +35,7 @@ if ($f == 'register') {
         if (in_array(true, $is_exist)) {
             $errors = $error_icon . $wo['lang']['username_exists'];
         }
-        if (Wo_IsBanned($_POST['username'])) {
-            $errors = $error_icon . $wo['lang']['username_is_banned'];
-        }
-        if (Wo_IsBanned($_POST['email'])) {
-            $errors = $error_icon . $wo['lang']['email_is_banned'];
-        }
-        if (preg_match_all('~@(.*?)(.*)~', $_POST['email'], $matches) && !empty($matches[2]) && !empty($matches[2][0]) && Wo_IsBanned($matches[2][0])) {
-            $errors = $error_icon . $wo['lang']['email_provider_banned'];
-        }
+       
         if (Wo_CheckIfUserCanRegister($wo['config']['user_limit']) === false) {
             $errors = $error_icon . $wo['lang']['limit_exceeded'];
         }

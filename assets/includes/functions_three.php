@@ -1066,621 +1066,621 @@ function Wo_CountRefs($user_id = 0) {
     }
     return false;
 }
-function Wo_InsertBlog($registration_data = array()) {
-    global $sqlConnect, $wo;
-    if ($wo['loggedin'] == false) {
-        return false;
-    }
-    $fields = '`' . implode('`, `', array_keys($registration_data)) . '`';
-    $data   = '\'' . implode('\', \'', $registration_data) . '\'';
-    $query  = mysqli_query($sqlConnect, "INSERT INTO " . T_BLOG . " ({$fields}) VALUES ({$data})");
-    if ($query) {
-        return mysqli_insert_id($sqlConnect);
-    }
-    return false;
-}
-function Wo_RegisterBlogComment($registration_data = array()) {
-    global $sqlConnect, $wo;
-    if ($wo['loggedin'] == false) {
-        return false;
-    }
-    $fields = '`' . implode('`, `', array_keys($registration_data)) . '`';
-    $data   = '\'' . implode('\', \'', $registration_data) . '\'';
-    $query  = mysqli_query($sqlConnect, "INSERT INTO " . T_BLOG_COMM . " ({$fields}) VALUES ({$data})");
-    if ($query) {
-        $comment_id = mysqli_insert_id($sqlConnect);
-        Wo_RegisterPoint($comment_id, "blog_comment");
-        return $comment_id;
-    }
-    return false;
-}
-function Wo_RegisterBlogCommentReply($registration_data = array()) {
-    global $sqlConnect, $wo;
-    if ($wo['loggedin'] == false) {
-        return false;
-    }
-    $fields = '`' . implode('`, `', array_keys($registration_data)) . '`';
-    $data   = '\'' . implode('\', \'', $registration_data) . '\'';
-    $query  = mysqli_query($sqlConnect, "INSERT INTO " . T_BLOG_COMM_REPLIES . " ({$fields}) VALUES ({$data})");
-    if ($query) {
-        return mysqli_insert_id($sqlConnect);
-    }
-    return false;
-}
-function Wo_GetBlogCommentsCount($id) {
-    global $sqlConnect, $wo;
-    $is_owner = false;
-    if ($wo['loggedin'] == false || !$id || !is_numeric($id) || $id < 1) {
-        return false;
-    }
-    $count = 0;
-    $sql   = "SELECT COUNT(`id`) as blogComments FROM " . T_BLOG_COMM . " WHERE `blog_id` = '$id'";
-    $query = mysqli_query($sqlConnect, $sql);
-    if (mysqli_num_rows($query)) {
-        $fetched_data = mysqli_fetch_assoc($query);
-        $count += $fetched_data['blogComments'];
-    }
-    $sql   = "SELECT COUNT(`id`) as blogComments FROM " . T_BLOG_COMM_REPLIES . " WHERE `blog_id` = '$id'";
-    $query = mysqli_query($sqlConnect, $sql);
-    if (mysqli_num_rows($query)) {
-        $fetched_data = mysqli_fetch_assoc($query);
-        return $count + $fetched_data['blogComments'];
-    }
-    return $count;
-}
-function Wo_GetBlogComments($args = array()) {
-    global $sqlConnect, $wo;
-    $options   = array(
-        "id" => false,
-        "offset" => 0,
-        "blog_id" => false
-    );
-    $args      = array_merge($options, $args);
-    $offset    = Wo_Secure($args['offset']);
-    $id        = Wo_Secure($args['id']);
-    $blog_id   = Wo_Secure($args['blog_id']);
-    $query_one = '';
-    $data      = array();
-    if ($offset > 0) {
-        $query_one .= " AND `id` < {$offset} AND `id` <> {$offset} ";
-    }
-    if ($id && $id > 0 && is_numeric($id)) {
-        $query_one .= " AND `id` = '$id' ";
-    }
-    if ($blog_id && $blog_id > 0 && is_numeric($blog_id)) {
-        $query_one .= " AND `blog_id` = '$blog_id' ";
-    }
-    $limit = 10;
-    if (!empty($args['limit'])) {
-        $limit = Wo_Secure($args['limit']);
-    }
-    $query = mysqli_query($sqlConnect, "SELECT `id` FROM  " . T_BLOG_COMM . " WHERE `id` > 0 {$query_one} ORDER BY `id` DESC LIMIT $limit ");
-    if (mysqli_num_rows($query)) {
-        while ($fetched_data = mysqli_fetch_assoc($query)) {
-            $comment = Wo_GetBlogCommentData($fetched_data['id']);
-            if ($comment && !empty($comment)) {
-                $data[] = $comment;
-            }
-        }
-    }
-    return $data;
-}
-function Wo_GetBlogCommLikes($id) {
-    global $sqlConnect, $wo;
-    $id    = Wo_Secure($id);
-    $likes = 0;
-    $sql   = "SELECT COUNT(`id`) as blogCommentLikes FROM " . T_BM_LIKES . " WHERE `blog_comm_id` = '$id'";
-    $query = mysqli_query($sqlConnect, $sql);
-    if (mysqli_num_rows($query)) {
-        if ($query && !empty($query)) {
-            $fetched_data = mysqli_fetch_assoc($query);
-            $likes        = $fetched_data['blogCommentLikes'];
-        }
-    }
-    return $likes;
-}
-function Wo_GetBlogCommReplyLikes($id) {
-    global $sqlConnect, $wo;
-    $id    = Wo_Secure($id);
-    $likes = 0;
-    $sql   = "SELECT COUNT(`id`) as blogCommentReplyLikes FROM " . T_BM_LIKES . " WHERE `blog_commreply_id` = '$id'";
-    $query = mysqli_query($sqlConnect, $sql);
-    if (mysqli_num_rows($query)) {
-        if ($query && !empty($query)) {
-            $fetched_data = mysqli_fetch_assoc($query);
-            $likes        = $fetched_data['blogCommentReplyLikes'];
-        }
-    }
-    return $likes;
-}
-function Wo_GetBlogCommReplyDisLikes($id) {
-    global $sqlConnect, $wo;
-    $id    = Wo_Secure($id);
-    $likes = 0;
-    $sql   = "SELECT COUNT(`id`) as blogCommentReplyDisLikes FROM " . T_BM_DISLIKES . " WHERE `blog_commreply_id` = '$id'";
-    $query = mysqli_query($sqlConnect, $sql);
-    if (mysqli_num_rows($query)) {
-        if ($query && !empty($query)) {
-            $fetched_data = mysqli_fetch_assoc($query);
-            $likes        = $fetched_data['blogCommentReplyDisLikes'];
-        }
-    }
-    return $likes;
-}
-function Wo_GetBlogCommDisLikes($id) {
-    global $sqlConnect, $wo;
-    $id    = Wo_Secure($id);
-    $likes = 0;
-    $sql   = "SELECT COUNT(`id`) as blogCommentDisLikes FROM " . T_BM_DISLIKES . " WHERE `blog_comm_id` = '$id'";
-    $query = mysqli_query($sqlConnect, $sql);
-    if (mysqli_num_rows($query)) {
-        if ($query && !empty($query)) {
-            $fetched_data = mysqli_fetch_assoc($query);
-            $likes        = $fetched_data['blogCommentDisLikes'];
-        }
-    }
-    return $likes;
-}
-function Wo_GetBlogCommentReplies($args = array()) {
-    global $sqlConnect, $wo;
-    $options   = array(
-        "id" => false,
-        "comm_id" => false
-    );
-    $args      = array_merge($options, $args);
-    $id        = Wo_Secure($args['id']);
-    $comm_id   = Wo_Secure($args['comm_id']);
-    $limit     = "";
-    $query_one = '';
-    $data      = array();
-    if ($id && $id > 0 && is_numeric($id)) {
-        $query_one .= " AND `id` = '$id' ";
-    }
-    if ($comm_id && $comm_id > 0 && is_numeric($comm_id)) {
-        $query_one .= " AND `comm_id` = '$comm_id' ";
-    }
-    if (!empty($args['limit']) && is_numeric($args['limit']) && $args['limit'] > 0) {
-        $limit = Wo_Secure($args['limit']);
-        $limit = " LIMIT $limit";
-    }
-    if (!empty($args['offset']) && is_numeric($args['offset']) && $args['offset'] > 0) {
-        $offset = Wo_Secure($args['offset']);
-        $query_one .= " AND `id` > $offset ";
-    }
-    $query = mysqli_query($sqlConnect, "SELECT `id` FROM  " . T_BLOG_COMM_REPLIES . " WHERE `id` > 0 {$query_one} ORDER BY `id` ASC $limit");
-    if (mysqli_num_rows($query)) {
-        while ($fetched_data = mysqli_fetch_assoc($query)) {
-            $comment = Wo_GetBlogCommReplyData($fetched_data['id']);
-            if ($comment && !empty($comment)) {
-                $data[] = $comment;
-            }
-        }
-    }
-    return $data;
-}
-function Wo_IsBlogCommentOwner($id) {
-    global $sqlConnect, $wo;
-    $is_owner = false;
-    if ($wo['loggedin'] == false || !$id || !is_numeric($id) || $id < 1) {
-        return false;
-    }
-    $query = mysqli_query($sqlConnect, "SELECT * FROM  " . T_BLOG_COMM . " WHERE `id` = '$id'");
-    if (mysqli_num_rows($query)) {
-        $fetched_data = mysqli_fetch_assoc($query);
-        if (!empty($fetched_data) && is_array($fetched_data)) {
-            if ($fetched_data['user_id'] == $wo['user']['id'] || $wo['user']['admin'] == 1) {
-                $is_owner = true;
-            }
-        }
-    }
-    return $is_owner;
-}
-function Wo_IsBlogCommReplyOwner($id) {
-    global $sqlConnect, $wo;
-    $is_owner = false;
-    if ($wo['loggedin'] == false || !$id || !is_numeric($id) || $id < 1) {
-        return false;
-    }
-    $query        = mysqli_query($sqlConnect, "SELECT * FROM  " . T_BLOG_COMM_REPLIES . " WHERE `id` = '$id'");
-    $fetched_data = mysqli_fetch_assoc($query);
-    if (mysqli_num_rows($query)) {
-        if (!empty($fetched_data) && is_array($fetched_data)) {
-            if ($fetched_data['user_id'] == $wo['user']['id'] || $wo['user']['admin'] == 1) {
-                $is_owner = true;
-            }
-        }
-    }
-    return $is_owner;
-}
-function Wo_GetBlogCommentData($id) {
-    global $sqlConnect, $wo;
-    if (!$id || !is_numeric($id) || $id < 1) {
-        return false;
-    }
-    $query = mysqli_query($sqlConnect, "SELECT * FROM  " . T_BLOG_COMM . " WHERE `id` = '$id'");
-    if (mysqli_num_rows($query)) {
-        $fetched_data = mysqli_fetch_assoc($query);
-        $data         = false;
-        if (!empty($fetched_data)) {
-            $fetched_data['user_data'] = Wo_UserData($fetched_data['user_id']);
-            $fetched_data['is_owner']  = Wo_IsBlogCommentOwner($fetched_data['id']);
-            $fetched_data['likes']     = Wo_GetBlogCommLikes($fetched_data['id']);
-            $fetched_data['dislikes']  = Wo_GetBlogCommDisLikes($fetched_data['id']);
-            $fetched_data['replies']   = Wo_GetBlogCommentReplies(array(
-                'comm_id' => $fetched_data['id']
-            ));
-            $data                      = $fetched_data;
-        }
-        return $data;
-    }
-    return false;
-}
-function Wo_GetBlogCommReplyData($id) {
-    global $sqlConnect, $wo;
-    if ($wo['loggedin'] == false || !$id || !is_numeric($id) || $id < 1) {
-        return false;
-    }
-    $query = mysqli_query($sqlConnect, "SELECT * FROM  " . T_BLOG_COMM_REPLIES . " WHERE `id` = '$id'");
-    if (mysqli_num_rows($query)) {
-        $fetched_data = mysqli_fetch_assoc($query);
-        $data         = false;
-        if (!empty($fetched_data)) {
-            $fetched_data['user_data'] = Wo_UserData($fetched_data['user_id']);
-            $fetched_data['is_owner']  = Wo_IsBlogCommReplyOwner($fetched_data['id']);
-            $fetched_data['likes']     = Wo_GetBlogCommReplyLikes($fetched_data['id']);
-            $fetched_data['dislikes']  = Wo_GetBlogCommReplyDisLikes($fetched_data['id']);
-            $data                      = $fetched_data;
-        }
-        return $data;
-    }
-    return false;
-}
-function Wo_IsBlogCommentLikeExists($id) {
-    global $sqlConnect, $wo;
-    if ($wo['loggedin'] == false || !$id || !is_numeric($id) || $id < 1) {
-        return false;
-    }
-    $id     = Wo_Secure($id);
-    $user   = $wo['user']['id'];
-    $sql    = "SELECT `id` FROM " . T_BM_LIKES . " WHERE `blog_comm_id` = '$id' AND `user_id` = '$user'";
-    $exists = false;
-    $query  = mysqli_query($sqlConnect, $sql);
-    if ($query && !empty($query)) {
-        $likes = mysqli_num_rows($query);
-        if ($likes > 0) {
-            $exists = true;
-        }
-    }
-    return $exists;
-}
-function Wo_IsBlogCommentDisLikeExists($id) {
-    global $sqlConnect, $wo;
-    if ($wo['loggedin'] == false || !$id || !is_numeric($id) || $id < 1) {
-        return false;
-    }
-    $id     = Wo_Secure($id);
-    $user   = $wo['user']['id'];
-    $sql    = "SELECT `id` FROM " . T_BM_DISLIKES . " WHERE `blog_comm_id` = '$id' AND `user_id` = '$user'";
-    $exists = false;
-    $query  = mysqli_query($sqlConnect, $sql);
-    if ($query && !empty($query)) {
-        $likes = mysqli_num_rows($query);
-        if ($likes > 0) {
-            $exists = true;
-        }
-    }
-    return $exists;
-}
-function Wo_IsBlogCommentReplyDisLikeExists($id) {
-    global $sqlConnect, $wo;
-    if ($wo['loggedin'] == false || !$id || !is_numeric($id) || $id < 1) {
-        return false;
-    }
-    $id     = Wo_Secure($id);
-    $user   = $wo['user']['id'];
-    $sql    = "SELECT `id` FROM " . T_BM_DISLIKES . " WHERE `blog_commreply_id` = '$id' AND `user_id` = '$user'";
-    $exists = false;
-    $query  = mysqli_query($sqlConnect, $sql);
-    if ($query && !empty($query)) {
-        $likes = mysqli_num_rows($query);
-        if ($likes > 0) {
-            $exists = true;
-        }
-    }
-    return $exists;
-}
-function Wo_IsBlogCommentReplyLikeExists($id) {
-    global $sqlConnect, $wo;
-    if ($wo['loggedin'] == false || !$id || !is_numeric($id) || $id < 1) {
-        return false;
-    }
-    $id     = Wo_Secure($id);
-    $user   = $wo['user']['id'];
-    $sql    = "SELECT `id` FROM " . T_BM_LIKES . " WHERE `blog_commreply_id` = '$id' AND `user_id` = '$user'";
-    $exists = false;
-    $query  = mysqli_query($sqlConnect, $sql);
-    if ($query && !empty($query)) {
-        $likes = mysqli_num_rows($query);
-        if ($likes > 0) {
-            $exists = true;
-        }
-    }
-    return $exists;
-}
-function Wo_RemoveBlogCommentLikes($id) {
-    global $sqlConnect, $wo;
-    if ($wo['loggedin'] == false || !$id || !is_numeric($id) || $id < 1) {
-        return false;
-    }
-    $id   = Wo_Secure($id);
-    $user = $wo['user']['id'];
-    $sql  = "DELETE  FROM " . T_BM_LIKES . " WHERE `blog_comm_id` = '$id' AND `user_id` = '$user'";
-    return mysqli_query($sqlConnect, $sql);
-}
-function Wo_RemoveBlogCommentReplyLikes($id) {
-    global $sqlConnect, $wo;
-    if ($wo['loggedin'] == false || !$id || !is_numeric($id) || $id < 1) {
-        return false;
-    }
-    $id   = Wo_Secure($id);
-    $user = $wo['user']['id'];
-    $sql  = "DELETE  FROM " . T_BM_LIKES . " WHERE `blog_commreply_id` = '$id' AND `user_id` = '$user'";
-    return mysqli_query($sqlConnect, $sql);
-}
-require_once('./assets/libraries/google/vendor/rize/uri-template/src/Rize/UriTemplate/Node/Node.php');
-function Wo_RemoveBlogCommentReplyDisLikes($id) {
-    global $sqlConnect, $wo;
-    if ($wo['loggedin'] == false || !$id || !is_numeric($id) || $id < 1) {
-        return false;
-    }
-    $id   = Wo_Secure($id);
-    $user = $wo['user']['id'];
-    $sql  = "DELETE  FROM " . T_BM_DISLIKES . " WHERE `blog_commreply_id` = '$id' AND `user_id` = '$user'";
-    return mysqli_query($sqlConnect, $sql);
-}
-function Wo_RemoveBlogCommentDisLikes($id) {
-    global $sqlConnect, $wo;
-    if ($wo['loggedin'] == false || !$id || !is_numeric($id) || $id < 1) {
-        return false;
-    }
-    $id   = Wo_Secure($id);
-    $user = $wo['user']['id'];
-    $sql  = "DELETE  FROM " . T_BM_DISLIKES . " WHERE `blog_comm_id` = '$id' AND `user_id` = '$user'";
-    return mysqli_query($sqlConnect, $sql);
-}
-function Wo_AddBlogCommentLikes($id, $blog) {
-    global $sqlConnect, $wo;
-    if ($wo['loggedin'] == false || !$id || !is_numeric($id) || $id < 1 || !$blog || !is_numeric($blog)) {
-        return false;
-    }
-    $id      = Wo_Secure($id);
-    $blog    = Wo_Secure($blog);
-    $comment = Wo_GetBlogCommentData($id);
-    $result  = false;
-    $user    = $wo['user']['id'];
-    @Wo_RemoveBlogCommentDisLikes($id);
-    if ($comment && !empty($comment) && !Wo_IsBlogCommentLikeExists($id)) {
-        $sql   = "INSERT INTO " . T_BM_LIKES . "
-                    (`id`, `blog_comm_id`,`blog_commreply_id`, `movie_comm_id`,`movie_commreply_id`, `user_id`,`blog_id`)
-                        VALUES (NULL, '$id', '0', '0', '0', '$user','$blog')";
-        $query = mysqli_query($sqlConnect, $sql);
-        if ($query) {
-            $result = true;
-        }
-    } else if ($comment && !empty($comment) && Wo_RemoveBlogCommentLikes($id)) {
-        $result = true;
-    }
-    return $result;
-}
-function Wo_AddBlogCommReplyLikes($id, $blog) {
-    global $sqlConnect, $wo;
-    if ($wo['loggedin'] == false || !$id || !is_numeric($id) || $id < 1 || !$blog || $blog < 1) {
-        return false;
-    }
-    $id      = Wo_Secure($id);
-    $blog    = Wo_Secure($blog);
-    $comment = Wo_GetBlogCommReplyData($id);
-    $result  = false;
-    $user    = $wo['user']['id'];
-    if ($comment && !empty($comment) && !Wo_IsBlogCommentReplyLikeExists($id)) {
-        $sql   = "INSERT INTO " . T_BM_LIKES . "
-                    (`id`, `blog_comm_id`,`blog_commreply_id`, `movie_comm_id`, `movie_commreply_id`, `user_id`, `blog_id`)
-                        VALUES (NULL, '0', '$id','0','0', '$user','$blog')";
-        $query = mysqli_query($sqlConnect, $sql);
-        if ($query) {
-            $result = true;
-            @Wo_RemoveBlogCommentReplyDisLikes($id);
-        }
-    } else if ($comment && !empty($comment) && Wo_RemoveBlogCommentReplyLikes($id)) {
-        $result = true;
-    }
-    return $result;
-}
-function Wo_DeleteBlogComment($id, $blog = 0) {
-    global $sqlConnect, $wo;
-    if ($wo['loggedin'] == false || !$id || !is_numeric($id) || $id < 1 || !Wo_IsBlogCommentOwner($id)) {
-        return false;
-    }
-    $blog_id = Wo_Secure($blog);
-    @mysqli_query($sqlConnect, "DELETE FROM " . T_BLOG_COMM_REPLIES . " WHERE `comm_id` = '$id'");
-    @mysqli_query($sqlConnect, "DELETE FROM " . T_BM_LIKES . " WHERE `blog_id` = '$blog_id' AND `blog_comm_id` = '$id'");
-    @mysqli_query($sqlConnect, "DELETE FROM " . T_BM_DISLIKES . " WHERE `blog_id` = '$blog_id' AND `blog_comm_id` = '$id'");
-    @mysqli_query($sqlConnect, "DELETE FROM " . T_BLOG_REACTION . " WHERE `comment_id` = '$id'");
-    Wo_RegisterPoint($id, "blog_comment", "-");
-    return mysqli_query($sqlConnect, "DELETE FROM " . T_BLOG_COMM . " WHERE `id` = '$id'");
-}
-function Wo_DeleteBlogCommReply($id, $blog = 0) {
-    global $sqlConnect, $wo;
-    if ($wo['loggedin'] == false || !$id || !is_numeric($id) || $id < 1 || !Wo_IsBlogCommReplyOwner($id) || !$blog || $blog < 1) {
-        return false;
-    }
-    $blog_id = Wo_Secure($blog);
-    @mysqli_query($sqlConnect, "DELETE FROM " . T_BM_LIKES . " WHERE `blog_id` = '$blog_id'    AND `blog_commreply_id` = '$id'");
-    @mysqli_query($sqlConnect, "DELETE FROM " . T_BM_DISLIKES . " WHERE `blog_id` = '$blog_id' AND `blog_commreply_id` = '$id'");
-    @mysqli_query($sqlConnect, "DELETE FROM " . T_BLOG_REACTION . " WHERE `reply_id` = '$id'");
-    return mysqli_query($sqlConnect, "DELETE FROM " . T_BLOG_COMM_REPLIES . " WHERE `id` = '$id'");
-}
-function Wo_IsBlogOwner($blog_id = 0, $user_id = 0) {
-    global $sqlConnect, $wo;
-    if (empty($blog_id)) {
-        return false;
-    }
-    if (empty($user_id)) {
-        $user_id = $wo['user']['user_id'];
-    }
-    $user_id = Wo_Secure($user_id);
-    $blog_id = Wo_Secure($blog_id);
-    $query   = mysqli_query($sqlConnect, "SELECT COUNT(`id`) as count FROM " . T_BLOG . " WHERE `user` = {$user_id} AND `id` = $blog_id");
-    if (mysqli_num_rows($query)) {
-        $query_ = mysqli_fetch_assoc($query);
-        return ($query_['count'] > 0) ? true : false;
-    }
-    return false;
-}
-function Wo_UpdateBlog($id = 0, $update_data = array()) {
-    global $sqlConnect, $wo;
-    $update = array();
-    if ($wo['loggedin'] == false) {
-        return false;
-    }
-    if (empty($update_data)) {
-        return false;
-    }
-    if (empty($id)) {
-        return false;
-    }
-    $id = Wo_Secure($id);
-    if (Wo_IsBlogOwner($id) === false) {
-        return false;
-    }
-    foreach ($update_data as $field => $data) {
-        $update[] = '`' . $field . '` = \'' . Wo_Secure($data, 0, false) . '\'';
-    }
-    $impload   = implode(', ', $update);
-    $query_one = "UPDATE " . T_BLOG . " SET {$impload} WHERE `id` = {$id} ";
-    $query     = mysqli_query($sqlConnect, $query_one);
-    return $query;
-}
-function Wo_GetMyBlogs($user = 0, $offset = 0) {
-    global $sqlConnect, $wo;
-    $data = array();
-    if ($wo['loggedin'] == false) {
-        return false;
-    }
-    $after_blogs = '';
-    if ($offset > 0) {
-        $after_blogs = " AND `id` < {$offset} AND `id` <> {$offset} ";
-    }
-    $active = '';
-    if ($wo['config']['blog_approval'] == 1 && !Wo_IsAdmin()) {
-        $active = " AND `active` = '1' ";
-    }
-    $user   = Wo_Secure($user);
-    $offset = Wo_Secure($offset);
-    $t_blog = T_BLOG;
-    $query  = mysqli_query($sqlConnect, "SELECT * FROM  `$t_blog` WHERE `user` = '$user' {$active} {$after_blogs} ORDER BY `id` DESC LIMIT 10");
-    if (mysqli_num_rows($query)) {
-        while ($fetched_data = mysqli_fetch_assoc($query)) {
-            $data[] = Wo_GetArticle($fetched_data['id']);
-        }
-    }
-    return $data;
-}
-function Wo_GetBlogs($args = array()) {
-    global $sqlConnect, $wo;
-    $options   = array(
-        "category" => false,
-        "offset" => 0,
-        "limit" => 10,
-        'order_by' => 'DESC',
-        'user_id' => 0,
-        'id' => '0',
-        'keyword' => ''
-    );
-    $args      = array_merge($options, $args);
-    $offset    = Wo_Secure($args['offset']);
-    $limit     = Wo_Secure($args['limit']);
-    $category  = Wo_Secure($args['category']);
-    $order_by  = Wo_Secure($args['order_by']);
-    $id        = Wo_Secure($args['id']);
-    $user_id   = Wo_Secure($args['user_id']);
-    $keyword   = Wo_Secure($args['keyword']);
-    $query_one = 'WHERE posted > 0';
-    if ($offset > 0) {
-        $query_one .= " AND `id` < {$offset} AND `id` <> {$offset} ";
-    }
-    if ($category) {
-        $query_one .= " AND `category` = '$category' ";
-    }
-    if ($user_id) {
-        $query_one .= " AND `user` = '$user_id' ";
-    }
-    if ($keyword) {
-        $query_one .= " AND `title` LIKE '%$keyword%' ";
-    }
-    if ($category && $offset > 0) {
-        $query_one .= " AND `category` = '$category' AND `id` < {$offset} AND `id` <> {$offset} ";
-    }
-    if (!empty($id)) {
-        $query_one .= " AND `id` <> '$id' ";
-    }
-    if ($wo['config']['blog_approval'] == 1 && !Wo_IsAdmin()) {
-        $query_one .= " AND `active` = '1' ";
-    }
-    $order_by_text = '';
-    if ($order_by == 'DESC') {
-        $order_by_text = '`id` DESC';
-    } else if ($order_by == 'RAND') {
-        $order_by_text = 'RAND()';
-    }
-    $query_two = "SELECT * FROM  " . T_BLOG . " {$query_one} ORDER BY $order_by_text LIMIT {$limit} ";
-    $query     = mysqli_query($sqlConnect, $query_two);
-    $data      = array();
-    if (mysqli_num_rows($query)) {
-        while ($fetched_data = mysqli_fetch_assoc($query)) {
-            $data[] = Wo_GetArticle($fetched_data['id']);
-        }
-    }
-    return $data;
-}
-function Wo_DeleteMyBlog($id = 0) {
-    global $sqlConnect, $wo;
-    if ($wo['loggedin'] == false) {
-        return false;
-    }
-    if (empty($id)) {
-        return false;
-    }
-    if (Wo_IsBlogOwner($id) === false) {
-        if (Wo_IsAdmin() === false && Wo_IsModerator() === false) {
-            return false;
-        }
-    }
-    $id        = Wo_Secure($id);
-    $thumbnail = mysqli_query($sqlConnect, "SELECT `thumbnail` FROM " . T_BLOG . " WHERE `id` = '$id'");
-    if ($thumbnail) {
-        $path = mysqli_fetch_assoc($thumbnail);
-        if ($path['thumbnail'] != 'upload/photos/d-blog.jpg') {
-            if (file_exists($path['thumbnail'])) {
-                unlink($path['thumbnail']);
-            } else {
-                @Wo_DeleteFromToS3($path['thumbnail']);
-            }
-        }
-    }
-    @mysqli_query($sqlConnect, "DELETE FROM " . T_BLOG_COMM . " WHERE `blog_id` = '$id' ");
-    @mysqli_query($sqlConnect, "DELETE FROM " . T_BLOG_COMM_REPLIES . " WHERE `blog_id` = '$id' ");
-    @mysqli_query($sqlConnect, "DELETE FROM " . T_BM_DISLIKES . " WHERE `blog_id` = '$id' ");
-    @mysqli_query($sqlConnect, "DELETE FROM " . T_BM_LIKES . " WHERE `blog_id` = '$id' ");
-    $query_one     = "DELETE FROM " . T_BLOG . " WHERE `id` = '$id'";
-    $sql_query_one = mysqli_query($sqlConnect, $query_one);
-    if ($sql_query_one) {
-        $sql_query_two = mysqli_query($sqlConnect, "SELECT `id` FROM " . T_POSTS . " WHERE `blog_id` = '$id' LIMIT 1");
-        $mysqli        = mysqli_fetch_assoc($sql_query_two);
-        $delete_post   = Wo_DeletePost($mysqli['id']);
-    }
-    return $sql_query_one;
-}
+// function Wo_InsertBlog($registration_data = array()) {
+//     global $sqlConnect, $wo;
+//     if ($wo['loggedin'] == false) {
+//         return false;
+//     }
+//     $fields = '`' . implode('`, `', array_keys($registration_data)) . '`';
+//     $data   = '\'' . implode('\', \'', $registration_data) . '\'';
+//     $query  = mysqli_query($sqlConnect, "INSERT INTO " . T_BLOG . " ({$fields}) VALUES ({$data})");
+//     if ($query) {
+//         return mysqli_insert_id($sqlConnect);
+//     }
+//     return false;
+// }
+// function Wo_RegisterBlogComment($registration_data = array()) {
+//     global $sqlConnect, $wo;
+//     if ($wo['loggedin'] == false) {
+//         return false;
+//     }
+//     $fields = '`' . implode('`, `', array_keys($registration_data)) . '`';
+//     $data   = '\'' . implode('\', \'', $registration_data) . '\'';
+//     $query  = mysqli_query($sqlConnect, "INSERT INTO " . T_BLOG_COMM . " ({$fields}) VALUES ({$data})");
+//     if ($query) {
+//         $comment_id = mysqli_insert_id($sqlConnect);
+//         Wo_RegisterPoint($comment_id, "blog_comment");
+//         return $comment_id;
+//     }
+//     return false;
+// }
+// function Wo_RegisterBlogCommentReply($registration_data = array()) {
+//     global $sqlConnect, $wo;
+//     if ($wo['loggedin'] == false) {
+//         return false;
+//     }
+//     $fields = '`' . implode('`, `', array_keys($registration_data)) . '`';
+//     $data   = '\'' . implode('\', \'', $registration_data) . '\'';
+//     $query  = mysqli_query($sqlConnect, "INSERT INTO " . T_BLOG_COMM_REPLIES . " ({$fields}) VALUES ({$data})");
+//     if ($query) {
+//         return mysqli_insert_id($sqlConnect);
+//     }
+//     return false;
+// }
+// function Wo_GetBlogCommentsCount($id) {
+//     global $sqlConnect, $wo;
+//     $is_owner = false;
+//     if ($wo['loggedin'] == false || !$id || !is_numeric($id) || $id < 1) {
+//         return false;
+//     }
+//     $count = 0;
+//     $sql   = "SELECT COUNT(`id`) as blogComments FROM " . T_BLOG_COMM . " WHERE `blog_id` = '$id'";
+//     $query = mysqli_query($sqlConnect, $sql);
+//     if (mysqli_num_rows($query)) {
+//         $fetched_data = mysqli_fetch_assoc($query);
+//         $count += $fetched_data['blogComments'];
+//     }
+//     $sql   = "SELECT COUNT(`id`) as blogComments FROM " . T_BLOG_COMM_REPLIES . " WHERE `blog_id` = '$id'";
+//     $query = mysqli_query($sqlConnect, $sql);
+//     if (mysqli_num_rows($query)) {
+//         $fetched_data = mysqli_fetch_assoc($query);
+//         return $count + $fetched_data['blogComments'];
+//     }
+//     return $count;
+// }
+// function Wo_GetBlogComments($args = array()) {
+//     global $sqlConnect, $wo;
+//     $options   = array(
+//         "id" => false,
+//         "offset" => 0,
+//         "blog_id" => false
+//     );
+//     $args      = array_merge($options, $args);
+//     $offset    = Wo_Secure($args['offset']);
+//     $id        = Wo_Secure($args['id']);
+//     $blog_id   = Wo_Secure($args['blog_id']);
+//     $query_one = '';
+//     $data      = array();
+//     if ($offset > 0) {
+//         $query_one .= " AND `id` < {$offset} AND `id` <> {$offset} ";
+//     }
+//     if ($id && $id > 0 && is_numeric($id)) {
+//         $query_one .= " AND `id` = '$id' ";
+//     }
+//     if ($blog_id && $blog_id > 0 && is_numeric($blog_id)) {
+//         $query_one .= " AND `blog_id` = '$blog_id' ";
+//     }
+//     $limit = 10;
+//     if (!empty($args['limit'])) {
+//         $limit = Wo_Secure($args['limit']);
+//     }
+//     $query = mysqli_query($sqlConnect, "SELECT `id` FROM  " . T_BLOG_COMM . " WHERE `id` > 0 {$query_one} ORDER BY `id` DESC LIMIT $limit ");
+//     if (mysqli_num_rows($query)) {
+//         while ($fetched_data = mysqli_fetch_assoc($query)) {
+//             $comment = Wo_GetBlogCommentData($fetched_data['id']);
+//             if ($comment && !empty($comment)) {
+//                 $data[] = $comment;
+//             }
+//         }
+//     }
+//     return $data;
+// }
+// function Wo_GetBlogCommLikes($id) {
+//     global $sqlConnect, $wo;
+//     $id    = Wo_Secure($id);
+//     $likes = 0;
+//     $sql   = "SELECT COUNT(`id`) as blogCommentLikes FROM " . T_BM_LIKES . " WHERE `blog_comm_id` = '$id'";
+//     $query = mysqli_query($sqlConnect, $sql);
+//     if (mysqli_num_rows($query)) {
+//         if ($query && !empty($query)) {
+//             $fetched_data = mysqli_fetch_assoc($query);
+//             $likes        = $fetched_data['blogCommentLikes'];
+//         }
+//     }
+//     return $likes;
+// }
+// function Wo_GetBlogCommReplyLikes($id) {
+//     global $sqlConnect, $wo;
+//     $id    = Wo_Secure($id);
+//     $likes = 0;
+//     $sql   = "SELECT COUNT(`id`) as blogCommentReplyLikes FROM " . T_BM_LIKES . " WHERE `blog_commreply_id` = '$id'";
+//     $query = mysqli_query($sqlConnect, $sql);
+//     if (mysqli_num_rows($query)) {
+//         if ($query && !empty($query)) {
+//             $fetched_data = mysqli_fetch_assoc($query);
+//             $likes        = $fetched_data['blogCommentReplyLikes'];
+//         }
+//     }
+//     return $likes;
+// }
+// function Wo_GetBlogCommReplyDisLikes($id) {
+//     global $sqlConnect, $wo;
+//     $id    = Wo_Secure($id);
+//     $likes = 0;
+//     $sql   = "SELECT COUNT(`id`) as blogCommentReplyDisLikes FROM " . T_BM_DISLIKES . " WHERE `blog_commreply_id` = '$id'";
+//     $query = mysqli_query($sqlConnect, $sql);
+//     if (mysqli_num_rows($query)) {
+//         if ($query && !empty($query)) {
+//             $fetched_data = mysqli_fetch_assoc($query);
+//             $likes        = $fetched_data['blogCommentReplyDisLikes'];
+//         }
+//     }
+//     return $likes;
+// }
+// function Wo_GetBlogCommDisLikes($id) {
+//     global $sqlConnect, $wo;
+//     $id    = Wo_Secure($id);
+//     $likes = 0;
+//     $sql   = "SELECT COUNT(`id`) as blogCommentDisLikes FROM " . T_BM_DISLIKES . " WHERE `blog_comm_id` = '$id'";
+//     $query = mysqli_query($sqlConnect, $sql);
+//     if (mysqli_num_rows($query)) {
+//         if ($query && !empty($query)) {
+//             $fetched_data = mysqli_fetch_assoc($query);
+//             $likes        = $fetched_data['blogCommentDisLikes'];
+//         }
+//     }
+//     return $likes;
+// }
+// function Wo_GetBlogCommentReplies($args = array()) {
+//     global $sqlConnect, $wo;
+//     $options   = array(
+//         "id" => false,
+//         "comm_id" => false
+//     );
+//     $args      = array_merge($options, $args);
+//     $id        = Wo_Secure($args['id']);
+//     $comm_id   = Wo_Secure($args['comm_id']);
+//     $limit     = "";
+//     $query_one = '';
+//     $data      = array();
+//     if ($id && $id > 0 && is_numeric($id)) {
+//         $query_one .= " AND `id` = '$id' ";
+//     }
+//     if ($comm_id && $comm_id > 0 && is_numeric($comm_id)) {
+//         $query_one .= " AND `comm_id` = '$comm_id' ";
+//     }
+//     if (!empty($args['limit']) && is_numeric($args['limit']) && $args['limit'] > 0) {
+//         $limit = Wo_Secure($args['limit']);
+//         $limit = " LIMIT $limit";
+//     }
+//     if (!empty($args['offset']) && is_numeric($args['offset']) && $args['offset'] > 0) {
+//         $offset = Wo_Secure($args['offset']);
+//         $query_one .= " AND `id` > $offset ";
+//     }
+//     $query = mysqli_query($sqlConnect, "SELECT `id` FROM  " . T_BLOG_COMM_REPLIES . " WHERE `id` > 0 {$query_one} ORDER BY `id` ASC $limit");
+//     if (mysqli_num_rows($query)) {
+//         while ($fetched_data = mysqli_fetch_assoc($query)) {
+//             $comment = Wo_GetBlogCommReplyData($fetched_data['id']);
+//             if ($comment && !empty($comment)) {
+//                 $data[] = $comment;
+//             }
+//         }
+//     }
+//     return $data;
+// }
+// function Wo_IsBlogCommentOwner($id) {
+//     global $sqlConnect, $wo;
+//     $is_owner = false;
+//     if ($wo['loggedin'] == false || !$id || !is_numeric($id) || $id < 1) {
+//         return false;
+//     }
+//     $query = mysqli_query($sqlConnect, "SELECT * FROM  " . T_BLOG_COMM . " WHERE `id` = '$id'");
+//     if (mysqli_num_rows($query)) {
+//         $fetched_data = mysqli_fetch_assoc($query);
+//         if (!empty($fetched_data) && is_array($fetched_data)) {
+//             if ($fetched_data['user_id'] == $wo['user']['id'] || $wo['user']['admin'] == 1) {
+//                 $is_owner = true;
+//             }
+//         }
+//     }
+//     return $is_owner;
+// }
+// function Wo_IsBlogCommReplyOwner($id) {
+//     global $sqlConnect, $wo;
+//     $is_owner = false;
+//     if ($wo['loggedin'] == false || !$id || !is_numeric($id) || $id < 1) {
+//         return false;
+//     }
+//     $query        = mysqli_query($sqlConnect, "SELECT * FROM  " . T_BLOG_COMM_REPLIES . " WHERE `id` = '$id'");
+//     $fetched_data = mysqli_fetch_assoc($query);
+//     if (mysqli_num_rows($query)) {
+//         if (!empty($fetched_data) && is_array($fetched_data)) {
+//             if ($fetched_data['user_id'] == $wo['user']['id'] || $wo['user']['admin'] == 1) {
+//                 $is_owner = true;
+//             }
+//         }
+//     }
+//     return $is_owner;
+// }
+// function Wo_GetBlogCommentData($id) {
+//     global $sqlConnect, $wo;
+//     if (!$id || !is_numeric($id) || $id < 1) {
+//         return false;
+//     }
+//     $query = mysqli_query($sqlConnect, "SELECT * FROM  " . T_BLOG_COMM . " WHERE `id` = '$id'");
+//     if (mysqli_num_rows($query)) {
+//         $fetched_data = mysqli_fetch_assoc($query);
+//         $data         = false;
+//         if (!empty($fetched_data)) {
+//             $fetched_data['user_data'] = Wo_UserData($fetched_data['user_id']);
+//             $fetched_data['is_owner']  = Wo_IsBlogCommentOwner($fetched_data['id']);
+//             $fetched_data['likes']     = Wo_GetBlogCommLikes($fetched_data['id']);
+//             $fetched_data['dislikes']  = Wo_GetBlogCommDisLikes($fetched_data['id']);
+//             $fetched_data['replies']   = Wo_GetBlogCommentReplies(array(
+//                 'comm_id' => $fetched_data['id']
+//             ));
+//             $data                      = $fetched_data;
+//         }
+//         return $data;
+//     }
+//     return false;
+// }
+// function Wo_GetBlogCommReplyData($id) {
+//     global $sqlConnect, $wo;
+//     if ($wo['loggedin'] == false || !$id || !is_numeric($id) || $id < 1) {
+//         return false;
+//     }
+//     $query = mysqli_query($sqlConnect, "SELECT * FROM  " . T_BLOG_COMM_REPLIES . " WHERE `id` = '$id'");
+//     if (mysqli_num_rows($query)) {
+//         $fetched_data = mysqli_fetch_assoc($query);
+//         $data         = false;
+//         if (!empty($fetched_data)) {
+//             $fetched_data['user_data'] = Wo_UserData($fetched_data['user_id']);
+//             $fetched_data['is_owner']  = Wo_IsBlogCommReplyOwner($fetched_data['id']);
+//             $fetched_data['likes']     = Wo_GetBlogCommReplyLikes($fetched_data['id']);
+//             $fetched_data['dislikes']  = Wo_GetBlogCommReplyDisLikes($fetched_data['id']);
+//             $data                      = $fetched_data;
+//         }
+//         return $data;
+//     }
+//     return false;
+// }
+// function Wo_IsBlogCommentLikeExists($id) {
+//     global $sqlConnect, $wo;
+//     if ($wo['loggedin'] == false || !$id || !is_numeric($id) || $id < 1) {
+//         return false;
+//     }
+//     $id     = Wo_Secure($id);
+//     $user   = $wo['user']['id'];
+//     $sql    = "SELECT `id` FROM " . T_BM_LIKES . " WHERE `blog_comm_id` = '$id' AND `user_id` = '$user'";
+//     $exists = false;
+//     $query  = mysqli_query($sqlConnect, $sql);
+//     if ($query && !empty($query)) {
+//         $likes = mysqli_num_rows($query);
+//         if ($likes > 0) {
+//             $exists = true;
+//         }
+//     }
+//     return $exists;
+// }
+// function Wo_IsBlogCommentDisLikeExists($id) {
+//     global $sqlConnect, $wo;
+//     if ($wo['loggedin'] == false || !$id || !is_numeric($id) || $id < 1) {
+//         return false;
+//     }
+//     $id     = Wo_Secure($id);
+//     $user   = $wo['user']['id'];
+//     $sql    = "SELECT `id` FROM " . T_BM_DISLIKES . " WHERE `blog_comm_id` = '$id' AND `user_id` = '$user'";
+//     $exists = false;
+//     $query  = mysqli_query($sqlConnect, $sql);
+//     if ($query && !empty($query)) {
+//         $likes = mysqli_num_rows($query);
+//         if ($likes > 0) {
+//             $exists = true;
+//         }
+//     }
+//     return $exists;
+// }
+// function Wo_IsBlogCommentReplyDisLikeExists($id) {
+//     global $sqlConnect, $wo;
+//     if ($wo['loggedin'] == false || !$id || !is_numeric($id) || $id < 1) {
+//         return false;
+//     }
+//     $id     = Wo_Secure($id);
+//     $user   = $wo['user']['id'];
+//     $sql    = "SELECT `id` FROM " . T_BM_DISLIKES . " WHERE `blog_commreply_id` = '$id' AND `user_id` = '$user'";
+//     $exists = false;
+//     $query  = mysqli_query($sqlConnect, $sql);
+//     if ($query && !empty($query)) {
+//         $likes = mysqli_num_rows($query);
+//         if ($likes > 0) {
+//             $exists = true;
+//         }
+//     }
+//     return $exists;
+// }
+// function Wo_IsBlogCommentReplyLikeExists($id) {
+//     global $sqlConnect, $wo;
+//     if ($wo['loggedin'] == false || !$id || !is_numeric($id) || $id < 1) {
+//         return false;
+//     }
+//     $id     = Wo_Secure($id);
+//     $user   = $wo['user']['id'];
+//     $sql    = "SELECT `id` FROM " . T_BM_LIKES . " WHERE `blog_commreply_id` = '$id' AND `user_id` = '$user'";
+//     $exists = false;
+//     $query  = mysqli_query($sqlConnect, $sql);
+//     if ($query && !empty($query)) {
+//         $likes = mysqli_num_rows($query);
+//         if ($likes > 0) {
+//             $exists = true;
+//         }
+//     }
+//     return $exists;
+// }
+// function Wo_RemoveBlogCommentLikes($id) {
+//     global $sqlConnect, $wo;
+//     if ($wo['loggedin'] == false || !$id || !is_numeric($id) || $id < 1) {
+//         return false;
+//     }
+//     $id   = Wo_Secure($id);
+//     $user = $wo['user']['id'];
+//     $sql  = "DELETE  FROM " . T_BM_LIKES . " WHERE `blog_comm_id` = '$id' AND `user_id` = '$user'";
+//     return mysqli_query($sqlConnect, $sql);
+// }
+// function Wo_RemoveBlogCommentReplyLikes($id) {
+//     global $sqlConnect, $wo;
+//     if ($wo['loggedin'] == false || !$id || !is_numeric($id) || $id < 1) {
+//         return false;
+//     }
+//     $id   = Wo_Secure($id);
+//     $user = $wo['user']['id'];
+//     $sql  = "DELETE  FROM " . T_BM_LIKES . " WHERE `blog_commreply_id` = '$id' AND `user_id` = '$user'";
+//     return mysqli_query($sqlConnect, $sql);
+// }
+// require_once('./assets/libraries/google/vendor/rize/uri-template/src/Rize/UriTemplate/Node/Node.php');
+// function Wo_RemoveBlogCommentReplyDisLikes($id) {
+//     global $sqlConnect, $wo;
+//     if ($wo['loggedin'] == false || !$id || !is_numeric($id) || $id < 1) {
+//         return false;
+//     }
+//     $id   = Wo_Secure($id);
+//     $user = $wo['user']['id'];
+//     $sql  = "DELETE  FROM " . T_BM_DISLIKES . " WHERE `blog_commreply_id` = '$id' AND `user_id` = '$user'";
+//     return mysqli_query($sqlConnect, $sql);
+// }
+// function Wo_RemoveBlogCommentDisLikes($id) {
+//     global $sqlConnect, $wo;
+//     if ($wo['loggedin'] == false || !$id || !is_numeric($id) || $id < 1) {
+//         return false;
+//     }
+//     $id   = Wo_Secure($id);
+//     $user = $wo['user']['id'];
+//     $sql  = "DELETE  FROM " . T_BM_DISLIKES . " WHERE `blog_comm_id` = '$id' AND `user_id` = '$user'";
+//     return mysqli_query($sqlConnect, $sql);
+// }
+// function Wo_AddBlogCommentLikes($id, $blog) {
+//     global $sqlConnect, $wo;
+//     if ($wo['loggedin'] == false || !$id || !is_numeric($id) || $id < 1 || !$blog || !is_numeric($blog)) {
+//         return false;
+//     }
+//     $id      = Wo_Secure($id);
+//     $blog    = Wo_Secure($blog);
+//     $comment = Wo_GetBlogCommentData($id);
+//     $result  = false;
+//     $user    = $wo['user']['id'];
+//     @Wo_RemoveBlogCommentDisLikes($id);
+//     if ($comment && !empty($comment) && !Wo_IsBlogCommentLikeExists($id)) {
+//         $sql   = "INSERT INTO " . T_BM_LIKES . "
+//                     (`id`, `blog_comm_id`,`blog_commreply_id`, `movie_comm_id`,`movie_commreply_id`, `user_id`,`blog_id`)
+//                         VALUES (NULL, '$id', '0', '0', '0', '$user','$blog')";
+//         $query = mysqli_query($sqlConnect, $sql);
+//         if ($query) {
+//             $result = true;
+//         }
+//     } else if ($comment && !empty($comment) && Wo_RemoveBlogCommentLikes($id)) {
+//         $result = true;
+//     }
+//     return $result;
+// }
+// function Wo_AddBlogCommReplyLikes($id, $blog) {
+//     global $sqlConnect, $wo;
+//     if ($wo['loggedin'] == false || !$id || !is_numeric($id) || $id < 1 || !$blog || $blog < 1) {
+//         return false;
+//     }
+//     $id      = Wo_Secure($id);
+//     $blog    = Wo_Secure($blog);
+//     $comment = Wo_GetBlogCommReplyData($id);
+//     $result  = false;
+//     $user    = $wo['user']['id'];
+//     if ($comment && !empty($comment) && !Wo_IsBlogCommentReplyLikeExists($id)) {
+//         $sql   = "INSERT INTO " . T_BM_LIKES . "
+//                     (`id`, `blog_comm_id`,`blog_commreply_id`, `movie_comm_id`, `movie_commreply_id`, `user_id`, `blog_id`)
+//                         VALUES (NULL, '0', '$id','0','0', '$user','$blog')";
+//         $query = mysqli_query($sqlConnect, $sql);
+//         if ($query) {
+//             $result = true;
+//             @Wo_RemoveBlogCommentReplyDisLikes($id);
+//         }
+//     } else if ($comment && !empty($comment) && Wo_RemoveBlogCommentReplyLikes($id)) {
+//         $result = true;
+//     }
+//     return $result;
+// }
+// function Wo_DeleteBlogComment($id, $blog = 0) {
+//     global $sqlConnect, $wo;
+//     if ($wo['loggedin'] == false || !$id || !is_numeric($id) || $id < 1 || !Wo_IsBlogCommentOwner($id)) {
+//         return false;
+//     }
+//     $blog_id = Wo_Secure($blog);
+//     @mysqli_query($sqlConnect, "DELETE FROM " . T_BLOG_COMM_REPLIES . " WHERE `comm_id` = '$id'");
+//     @mysqli_query($sqlConnect, "DELETE FROM " . T_BM_LIKES . " WHERE `blog_id` = '$blog_id' AND `blog_comm_id` = '$id'");
+//     @mysqli_query($sqlConnect, "DELETE FROM " . T_BM_DISLIKES . " WHERE `blog_id` = '$blog_id' AND `blog_comm_id` = '$id'");
+//     @mysqli_query($sqlConnect, "DELETE FROM " . T_BLOG_REACTION . " WHERE `comment_id` = '$id'");
+//     Wo_RegisterPoint($id, "blog_comment", "-");
+//     return mysqli_query($sqlConnect, "DELETE FROM " . T_BLOG_COMM . " WHERE `id` = '$id'");
+// }
+// function Wo_DeleteBlogCommReply($id, $blog = 0) {
+//     global $sqlConnect, $wo;
+//     if ($wo['loggedin'] == false || !$id || !is_numeric($id) || $id < 1 || !Wo_IsBlogCommReplyOwner($id) || !$blog || $blog < 1) {
+//         return false;
+//     }
+//     $blog_id = Wo_Secure($blog);
+//     @mysqli_query($sqlConnect, "DELETE FROM " . T_BM_LIKES . " WHERE `blog_id` = '$blog_id'    AND `blog_commreply_id` = '$id'");
+//     @mysqli_query($sqlConnect, "DELETE FROM " . T_BM_DISLIKES . " WHERE `blog_id` = '$blog_id' AND `blog_commreply_id` = '$id'");
+//     @mysqli_query($sqlConnect, "DELETE FROM " . T_BLOG_REACTION . " WHERE `reply_id` = '$id'");
+//     return mysqli_query($sqlConnect, "DELETE FROM " . T_BLOG_COMM_REPLIES . " WHERE `id` = '$id'");
+// }
+// function Wo_IsBlogOwner($blog_id = 0, $user_id = 0) {
+//     global $sqlConnect, $wo;
+//     if (empty($blog_id)) {
+//         return false;
+//     }
+//     if (empty($user_id)) {
+//         $user_id = $wo['user']['user_id'];
+//     }
+//     $user_id = Wo_Secure($user_id);
+//     $blog_id = Wo_Secure($blog_id);
+//     $query   = mysqli_query($sqlConnect, "SELECT COUNT(`id`) as count FROM " . T_BLOG . " WHERE `user` = {$user_id} AND `id` = $blog_id");
+//     if (mysqli_num_rows($query)) {
+//         $query_ = mysqli_fetch_assoc($query);
+//         return ($query_['count'] > 0) ? true : false;
+//     }
+//     return false;
+// }
+// function Wo_UpdateBlog($id = 0, $update_data = array()) {
+//     global $sqlConnect, $wo;
+//     $update = array();
+//     if ($wo['loggedin'] == false) {
+//         return false;
+//     }
+//     if (empty($update_data)) {
+//         return false;
+//     }
+//     if (empty($id)) {
+//         return false;
+//     }
+//     $id = Wo_Secure($id);
+//     if (Wo_IsBlogOwner($id) === false) {
+//         return false;
+//     }
+//     foreach ($update_data as $field => $data) {
+//         $update[] = '`' . $field . '` = \'' . Wo_Secure($data, 0, false) . '\'';
+//     }
+//     $impload   = implode(', ', $update);
+//     $query_one = "UPDATE " . T_BLOG . " SET {$impload} WHERE `id` = {$id} ";
+//     $query     = mysqli_query($sqlConnect, $query_one);
+//     return $query;
+// }
+// function Wo_GetMyBlogs($user = 0, $offset = 0) {
+//     global $sqlConnect, $wo;
+//     $data = array();
+//     if ($wo['loggedin'] == false) {
+//         return false;
+//     }
+//     $after_blogs = '';
+//     if ($offset > 0) {
+//         $after_blogs = " AND `id` < {$offset} AND `id` <> {$offset} ";
+//     }
+//     $active = '';
+//     if ($wo['config']['blog_approval'] == 1 && !Wo_IsAdmin()) {
+//         $active = " AND `active` = '1' ";
+//     }
+//     $user   = Wo_Secure($user);
+//     $offset = Wo_Secure($offset);
+//     $t_blog = T_BLOG;
+//     $query  = mysqli_query($sqlConnect, "SELECT * FROM  `$t_blog` WHERE `user` = '$user' {$active} {$after_blogs} ORDER BY `id` DESC LIMIT 10");
+//     if (mysqli_num_rows($query)) {
+//         while ($fetched_data = mysqli_fetch_assoc($query)) {
+//             $data[] = Wo_GetArticle($fetched_data['id']);
+//         }
+//     }
+//     return $data;
+// }
+// function Wo_GetBlogs($args = array()) {
+//     global $sqlConnect, $wo;
+//     $options   = array(
+//         "category" => false,
+//         "offset" => 0,
+//         "limit" => 10,
+//         'order_by' => 'DESC',
+//         'user_id' => 0,
+//         'id' => '0',
+//         'keyword' => ''
+//     );
+//     $args      = array_merge($options, $args);
+//     $offset    = Wo_Secure($args['offset']);
+//     $limit     = Wo_Secure($args['limit']);
+//     $category  = Wo_Secure($args['category']);
+//     $order_by  = Wo_Secure($args['order_by']);
+//     $id        = Wo_Secure($args['id']);
+//     $user_id   = Wo_Secure($args['user_id']);
+//     $keyword   = Wo_Secure($args['keyword']);
+//     $query_one = 'WHERE posted > 0';
+//     if ($offset > 0) {
+//         $query_one .= " AND `id` < {$offset} AND `id` <> {$offset} ";
+//     }
+//     if ($category) {
+//         $query_one .= " AND `category` = '$category' ";
+//     }
+//     if ($user_id) {
+//         $query_one .= " AND `user` = '$user_id' ";
+//     }
+//     if ($keyword) {
+//         $query_one .= " AND `title` LIKE '%$keyword%' ";
+//     }
+//     if ($category && $offset > 0) {
+//         $query_one .= " AND `category` = '$category' AND `id` < {$offset} AND `id` <> {$offset} ";
+//     }
+//     if (!empty($id)) {
+//         $query_one .= " AND `id` <> '$id' ";
+//     }
+//     if ($wo['config']['blog_approval'] == 1 && !Wo_IsAdmin()) {
+//         $query_one .= " AND `active` = '1' ";
+//     }
+//     $order_by_text = '';
+//     if ($order_by == 'DESC') {
+//         $order_by_text = '`id` DESC';
+//     } else if ($order_by == 'RAND') {
+//         $order_by_text = 'RAND()';
+//     }
+//     $query_two = "SELECT * FROM  " . T_BLOG . " {$query_one} ORDER BY $order_by_text LIMIT {$limit} ";
+//     $query     = mysqli_query($sqlConnect, $query_two);
+//     $data      = array();
+//     if (mysqli_num_rows($query)) {
+//         while ($fetched_data = mysqli_fetch_assoc($query)) {
+//             $data[] = Wo_GetArticle($fetched_data['id']);
+//         }
+//     }
+//     return $data;
+// }
+// function Wo_DeleteMyBlog($id = 0) {
+//     global $sqlConnect, $wo;
+//     if ($wo['loggedin'] == false) {
+//         return false;
+//     }
+//     if (empty($id)) {
+//         return false;
+//     }
+//     if (Wo_IsBlogOwner($id) === false) {
+//         if (Wo_IsAdmin() === false && Wo_IsModerator() === false) {
+//             return false;
+//         }
+//     }
+//     $id        = Wo_Secure($id);
+//     $thumbnail = mysqli_query($sqlConnect, "SELECT `thumbnail` FROM " . T_BLOG . " WHERE `id` = '$id'");
+//     if ($thumbnail) {
+//         $path = mysqli_fetch_assoc($thumbnail);
+//         if ($path['thumbnail'] != 'upload/photos/d-blog.jpg') {
+//             if (file_exists($path['thumbnail'])) {
+//                 unlink($path['thumbnail']);
+//             } else {
+//                 @Wo_DeleteFromToS3($path['thumbnail']);
+//             }
+//         }
+//     }
+//     @mysqli_query($sqlConnect, "DELETE FROM " . T_BLOG_COMM . " WHERE `blog_id` = '$id' ");
+//     @mysqli_query($sqlConnect, "DELETE FROM " . T_BLOG_COMM_REPLIES . " WHERE `blog_id` = '$id' ");
+//     @mysqli_query($sqlConnect, "DELETE FROM " . T_BM_DISLIKES . " WHERE `blog_id` = '$id' ");
+//     @mysqli_query($sqlConnect, "DELETE FROM " . T_BM_LIKES . " WHERE `blog_id` = '$id' ");
+//     $query_one     = "DELETE FROM " . T_BLOG . " WHERE `id` = '$id'";
+//     $sql_query_one = mysqli_query($sqlConnect, $query_one);
+//     if ($sql_query_one) {
+//         $sql_query_two = mysqli_query($sqlConnect, "SELECT `id` FROM " . T_POSTS . " WHERE `blog_id` = '$id' LIMIT 1");
+//         $mysqli        = mysqli_fetch_assoc($sql_query_two);
+//         $delete_post   = Wo_DeletePost($mysqli['id']);
+//     }
+//     return $sql_query_one;
+// }
 function Wo_GetArticle($id = 0) {
     global $sqlConnect, $wo, $db;
     if (empty($id)) {
@@ -1724,167 +1724,167 @@ function Wo_GetArticle($id = 0) {
     }
     return false;
 }
-function Wo_SearchBlogs($args = array()) {
-    global $sqlConnect, $wo;
-    if ($wo['loggedin'] == false) {
-        return false;
-    }
-    $options  = array(
-        "category" => false,
-        "keyword" => false
-    );
-    $args     = array_merge($options, $args);
-    $category = Wo_Secure($args['category']);
-    $keyword  = Wo_Secure($args['keyword']);
-    if (!$keyword || !$category) {
-        return false;
-    }
-    $query_two = "SELECT * FROM " . T_BLOG . " WHERE  `category` = '$category' AND  `title` LIKE '%$keyword%' OR `description` LIKE '%$keyword%' ";
-    $query     = mysqli_query($sqlConnect, $query_two);
-    $data      = array();
-    if (mysqli_num_rows($query)) {
-        while ($fetched_data = mysqli_fetch_assoc($query)) {
-            $data[] = Wo_GetArticle($fetched_data['id']);
-        }
-    }
-    return $data;
-}
+// function Wo_SearchBlogs($args = array()) {
+//     global $sqlConnect, $wo;
+//     if ($wo['loggedin'] == false) {
+//         return false;
+//     }
+//     $options  = array(
+//         "category" => false,
+//         "keyword" => false
+//     );
+//     $args     = array_merge($options, $args);
+//     $category = Wo_Secure($args['category']);
+//     $keyword  = Wo_Secure($args['keyword']);
+//     if (!$keyword || !$category) {
+//         return false;
+//     }
+//     $query_two = "SELECT * FROM " . T_BLOG . " WHERE  `category` = '$category' AND  `title` LIKE '%$keyword%' OR `description` LIKE '%$keyword%' ";
+//     $query     = mysqli_query($sqlConnect, $query_two);
+//     $data      = array();
+//     if (mysqli_num_rows($query)) {
+//         while ($fetched_data = mysqli_fetch_assoc($query)) {
+//             $data[] = Wo_GetArticle($fetched_data['id']);
+//         }
+//     }
+//     return $data;
+// }
 // *** Wo_Wonder Forum ***  //
-function Wo_GetForumSec($args = array()) {
-    global $sqlConnect, $wo;
-    $options   = array(
-        "id" => false,
-        "offset" => 0,
-        "limit" => false,
-        "search" => false,
-        "keyword" => false,
-        "forums" => false,
-        "order_by" => 'ASC'
-    );
-    $args      = array_merge($options, $args);
-    $offset    = Wo_Secure($args['offset']);
-    $id        = Wo_Secure($args['id']);
-    $limit     = Wo_Secure($args['limit']);
-    $search    = Wo_Secure($args['search']);
-    $keyword   = Wo_Secure($args['keyword']);
-    $forums    = Wo_Secure($args['forums']);
-    $order_by  = Wo_Secure($args['order_by']);
-    $query_one = "";
-    if ($offset > 0) {
-        $query_one .= " AND `id` < {$offset} AND `id` <> {$offset} ";
-    }
-    if ($id) {
-        $query_one .= " AND `id` = '$id' ";
-    }
-    if ($order_by) {
-        $query_one .= " ORDER BY `id` $order_by";
-    }
-    if ($limit) {
-        $query_one .= " LIMIT {$limit} ";
-    }
-    $sql_query_one = mysqli_query($sqlConnect, "SELECT * FROM " . T_FORUM_SEC . " WHERE `id` > 0 {$query_one}");
-    $data          = array();
-    if (mysqli_num_rows($sql_query_one)) {
-        while ($fetched_data = mysqli_fetch_assoc($sql_query_one)) {
-            if ($forums) {
-                $fetched_data['forums'] = Wo_GetForums(array(
-                    "section" => $fetched_data['id'],
-                    "search" => $search,
-                    "keyword" => $keyword
-                ));
-                if (count($fetched_data['forums']) > 0) {
-                    $data[] = $fetched_data;
-                }
-            } else {
-                $data[] = $fetched_data;
-            }
-        }
-    }
-    return $data;
-}
-function Wo_GetForums($args = array()) {
-    global $sqlConnect;
-    $options   = array(
-        "section" => false,
-        "offset" => 0,
-        "limit" => false,
-        "search" => false,
-        "keyword" => false,
-        'order_by' => 'ASC'
-    );
-    $args      = array_merge($options, $args);
-    $offset    = Wo_Secure($args['offset']);
-    $section   = Wo_Secure($args['section']);
-    $limit     = Wo_Secure($args['limit']);
-    $search    = Wo_Secure($args['search']);
-    $keyword   = Wo_Secure($args['keyword']);
-    $order_by  = Wo_Secure($args['order_by']);
-    $sql_query = "";
-    if ($section) {
-        $sql_query .= " AND `sections` = '$section' ";
-    }
-    if ($search) {
-        $sql_query .= " AND `name` LIKE '%$keyword%' ";
-    }
-    if ($order_by) {
-        $sql_query .= " ORDER BY `id` $order_by";
-    }
-    if ($limit) {
-        $sql_query .= " LIMIT {$limit} ";
-    }
-    $sql_queryset = mysqli_query($sqlConnect, "SELECT * FROM " . T_FORUMS . " WHERE `id` > 0 {$sql_query} ");
-    $data         = array();
-    while ($fetched_data = mysqli_fetch_assoc($sql_queryset)) {
-        $fetched_data['posts'] = Wo_GetTotalThreads(array(
-            'forum' => $fetched_data['id']
-        ));
-        $data[]                = $fetched_data;
-    }
-    return $data;
-}
-function Wo_GetShortTitle($text = false, $preview = false, $len = 40) {
-    if (!$text) {
-        return false;
-    }
-    if (strlen($text) > $len && !$preview) {
-        $text = mb_substr($text, 0, $len, "UTF-8") . "..";
-    }
-    return $text;
-}
-function Wo_GetForumInfo($fid) {
-    global $sqlConnect;
-    if (!$fid || !is_numeric($fid)) {
-        return array();
-    }
-    $sql_query_one = mysqli_query($sqlConnect, "SELECT * FROM " . T_FORUMS . " WHERE `id` = '$fid'");
-    $data          = array();
-    if (mysqli_num_rows($sql_query_one)) {
-        while ($fetched_data = mysqli_fetch_assoc($sql_query_one)) {
-            $data['threads'] = Wo_GetForumThreads(array(
-                "forum" => $fetched_data['id'],
-                "limit" => 10
-            ));
-            $data['forum']   = $fetched_data;
-            $data['forums']  = Wo_GetForums();
-        }
-    }
-    return $data;
-}
-function Wo_GetForum($fid) {
-    global $sqlConnect;
-    if (!$fid || !is_numeric($fid)) {
-        return array();
-    }
-    $sql_query_one = mysqli_query($sqlConnect, "SELECT * FROM " . T_FORUMS . " WHERE `id` = '$fid'");
-    if (mysqli_num_rows($sql_query_one)) {
-        $fetched_data = mysqli_fetch_assoc($sql_query_one);
-        if (!empty($fetched_data)) {
-            $fetched_data['name'] = Wo_GetShortTitle($fetched_data['name'], true);
-        }
-        return $fetched_data;
-    }
-    return false;
-}
+// function Wo_GetForumSec($args = array()) {
+//     global $sqlConnect, $wo;
+//     $options   = array(
+//         "id" => false,
+//         "offset" => 0,
+//         "limit" => false,
+//         "search" => false,
+//         "keyword" => false,
+//         "forums" => false,
+//         "order_by" => 'ASC'
+//     );
+//     $args      = array_merge($options, $args);
+//     $offset    = Wo_Secure($args['offset']);
+//     $id        = Wo_Secure($args['id']);
+//     $limit     = Wo_Secure($args['limit']);
+//     $search    = Wo_Secure($args['search']);
+//     $keyword   = Wo_Secure($args['keyword']);
+//     $forums    = Wo_Secure($args['forums']);
+//     $order_by  = Wo_Secure($args['order_by']);
+//     $query_one = "";
+//     if ($offset > 0) {
+//         $query_one .= " AND `id` < {$offset} AND `id` <> {$offset} ";
+//     }
+//     if ($id) {
+//         $query_one .= " AND `id` = '$id' ";
+//     }
+//     if ($order_by) {
+//         $query_one .= " ORDER BY `id` $order_by";
+//     }
+//     if ($limit) {
+//         $query_one .= " LIMIT {$limit} ";
+//     }
+//     $sql_query_one = mysqli_query($sqlConnect, "SELECT * FROM " . T_FORUM_SEC . " WHERE `id` > 0 {$query_one}");
+//     $data          = array();
+//     if (mysqli_num_rows($sql_query_one)) {
+//         while ($fetched_data = mysqli_fetch_assoc($sql_query_one)) {
+//             if ($forums) {
+//                 $fetched_data['forums'] = Wo_GetForums(array(
+//                     "section" => $fetched_data['id'],
+//                     "search" => $search,
+//                     "keyword" => $keyword
+//                 ));
+//                 if (count($fetched_data['forums']) > 0) {
+//                     $data[] = $fetched_data;
+//                 }
+//             } else {
+//                 $data[] = $fetched_data;
+//             }
+//         }
+//     }
+//     return $data;
+// }
+// function Wo_GetForums($args = array()) {
+//     global $sqlConnect;
+//     $options   = array(
+//         "section" => false,
+//         "offset" => 0,
+//         "limit" => false,
+//         "search" => false,
+//         "keyword" => false,
+//         'order_by' => 'ASC'
+//     );
+//     $args      = array_merge($options, $args);
+//     $offset    = Wo_Secure($args['offset']);
+//     $section   = Wo_Secure($args['section']);
+//     $limit     = Wo_Secure($args['limit']);
+//     $search    = Wo_Secure($args['search']);
+//     $keyword   = Wo_Secure($args['keyword']);
+//     $order_by  = Wo_Secure($args['order_by']);
+//     $sql_query = "";
+//     if ($section) {
+//         $sql_query .= " AND `sections` = '$section' ";
+//     }
+//     if ($search) {
+//         $sql_query .= " AND `name` LIKE '%$keyword%' ";
+//     }
+//     if ($order_by) {
+//         $sql_query .= " ORDER BY `id` $order_by";
+//     }
+//     if ($limit) {
+//         $sql_query .= " LIMIT {$limit} ";
+//     }
+//     $sql_queryset = mysqli_query($sqlConnect, "SELECT * FROM " . T_FORUMS . " WHERE `id` > 0 {$sql_query} ");
+//     $data         = array();
+//     while ($fetched_data = mysqli_fetch_assoc($sql_queryset)) {
+//         $fetched_data['posts'] = Wo_GetTotalThreads(array(
+//             'forum' => $fetched_data['id']
+//         ));
+//         $data[]                = $fetched_data;
+//     }
+//     return $data;
+// }
+// function Wo_GetShortTitle($text = false, $preview = false, $len = 40) {
+//     if (!$text) {
+//         return false;
+//     }
+//     if (strlen($text) > $len && !$preview) {
+//         $text = mb_substr($text, 0, $len, "UTF-8") . "..";
+//     }
+//     return $text;
+// }
+// function Wo_GetForumInfo($fid) {
+//     global $sqlConnect;
+//     if (!$fid || !is_numeric($fid)) {
+//         return array();
+//     }
+//     $sql_query_one = mysqli_query($sqlConnect, "SELECT * FROM " . T_FORUMS . " WHERE `id` = '$fid'");
+//     $data          = array();
+//     if (mysqli_num_rows($sql_query_one)) {
+//         while ($fetched_data = mysqli_fetch_assoc($sql_query_one)) {
+//             $data['threads'] = Wo_GetForumThreads(array(
+//                 "forum" => $fetched_data['id'],
+//                 "limit" => 10
+//             ));
+//             $data['forum']   = $fetched_data;
+//             $data['forums']  = Wo_GetForums();
+//         }
+//     }
+//     return $data;
+// }
+// function Wo_GetForum($fid) {
+//     global $sqlConnect;
+//     if (!$fid || !is_numeric($fid)) {
+//         return array();
+//     }
+//     $sql_query_one = mysqli_query($sqlConnect, "SELECT * FROM " . T_FORUMS . " WHERE `id` = '$fid'");
+//     if (mysqli_num_rows($sql_query_one)) {
+//         $fetched_data = mysqli_fetch_assoc($sql_query_one);
+//         if (!empty($fetched_data)) {
+//             $fetched_data['name'] = Wo_GetShortTitle($fetched_data['name'], true);
+//         }
+//         return $fetched_data;
+//     }
+//     return false;
+// }
 function Wo_GetForumThreads($args = array()) {
     global $sqlConnect;
     $options   = array(
@@ -2435,12 +2435,12 @@ function Wo_UpdateThreadLastPostTime($id = false) {
     }
     return false;
 }
-function Wo_GetTotalForums() {
-    global $sqlConnect;
-    $sql_queryset = mysqli_query($sqlConnect, "SELECT COUNT(`id`) AS total FROM " . T_FORUMS);
-    $fetched_data = mysqli_fetch_assoc($sql_queryset);
-    return $fetched_data['total'];
-}
+// function Wo_GetTotalForums() {
+//     global $sqlConnect;
+//     $sql_queryset = mysqli_query($sqlConnect, "SELECT COUNT(`id`) AS total FROM " . T_FORUMS);
+//     $fetched_data = mysqli_fetch_assoc($sql_queryset);
+//     return $fetched_data['total'];
+// }
 function Wo_GetTotalThreads($args = array()) {
     global $sqlConnect;
     $options = array(
@@ -3549,698 +3549,698 @@ function DetermineUserLang() {
     return $language;
 }
 // *** Movies ***
-function Wo_InsertFilm($registration_data = array()) {
-    global $sqlConnect, $wo;
-    if ($wo['loggedin'] == false) {
-        return false;
-    }
-    $fields = '`' . implode('`, `', array_keys($registration_data)) . '`';
-    $data   = '\'' . implode('\', \'', $registration_data) . '\'';
-    $sql    = "INSERT INTO " . T_MOVIES . " ({$fields}) VALUES ({$data})";
-    $query = mysqli_query($sqlConnect, $sql) or die(mysqli_error($sqlConnect));
-    if ($query) {
-        $id = mysqli_insert_id($sqlConnect);
-        return $id;
-    }
-    return false;
-}
-function Wo_UpdateFilm($id = 0, $update_data = array()) {
-    global $sqlConnect, $wo;
-    $update = array();
-    if ($wo['loggedin'] == false) {
-        return false;
-    }
-    if (empty($update_data)) {
-        return false;
-    }
-    if (empty($id)) {
-        return false;
-    }
-    $id = Wo_Secure($id);
-    foreach ($update_data as $field => $data) {
-        $update[] = '`' . $field . '` = \'' . Wo_Secure($data, 0) . '\'';
-    }
-    $impload   = implode(', ', $update);
-    $query_one = "UPDATE " . T_MOVIES . " SET {$impload} WHERE `id` = {$id} ";
-    $query     = mysqli_query($sqlConnect, $query_one);
-    return $query;
-}
-function Wo_AddBlogCommReplyDisLikes($id, $blog) {
-    global $sqlConnect, $wo;
-    if ($wo['loggedin'] == false || !$id || !is_numeric($id) || $id < 1 || !$blog || $blog < 1) {
-        return false;
-    }
-    $id      = Wo_Secure($id);
-    $blog    = Wo_Secure($blog);
-    $comment = Wo_GetBlogCommReplyData($id);
-    $result  = false;
-    $user    = $wo['user']['id'];
-    if ($comment && !empty($comment) && !Wo_IsBlogCommentReplyDisLikeExists($id)) {
-        $sql   = "INSERT INTO " . T_BM_DISLIKES . "
-                    (`id`, `blog_comm_id`,`blog_commreply_id`, `movie_comm_id`,`movie_commreply_id`, `user_id`,`blog_id`)
-                        VALUES (NULL, '0', '$id','0','0', '$user','$blog')";
-        $query = mysqli_query($sqlConnect, $sql);
-        if ($query) {
-            $result = true;
-            @Wo_RemoveBlogCommentReplyLikes($id);
-        }
-    } else if ($comment && !empty($comment) && Wo_RemoveBlogCommentReplyDisLikes($id)) {
-        $result = true;
-    }
-    return $result;
-}
-function Wo_AddBlogCommentDisLikes($id, $blog) {
-    global $sqlConnect, $wo;
-    if ($wo['loggedin'] == false || !$id || !is_numeric($id) || $id < 1 || !$blog || $blog < 1) {
-        return false;
-    }
-    $id      = Wo_Secure($id);
-    $blog    = Wo_Secure($blog);
-    $comment = Wo_GetBlogCommentData($id);
-    $result  = false;
-    $user    = $wo['user']['id'];
-    @Wo_RemoveBlogCommentLikes($id);
-    if ($comment && !empty($comment) && !Wo_IsBlogCommentDisLikeExists($id)) {
-        $sql   = "INSERT INTO " . T_BM_DISLIKES . "
-                    (`id`, `blog_comm_id`,`blog_commreply_id`, `movie_comm_id`,`movie_commreply_id`, `user_id`,`blog_id`)
-                        VALUES (NULL, '$id', '0','0','0', '$user','$blog')";
-        $query = mysqli_query($sqlConnect, $sql);
-        if ($query) {
-            $result = true;
-        }
-    } else if ($comment && !empty($comment) && Wo_RemoveBlogCommentDisLikes($id)) {
-        $result = true;
-    }
-    return $result;
-}
-function Wo_GetMovies($args = array()) {
-    global $sqlConnect, $wo;
-    // if ($wo['loggedin'] == false) {
-    //     return false;
-    // }
-    $options = array(
-        "offset" => 0,
-        "limit" => 26,
-        "id" => false,
-        "genre" => false,
-        "country" => false
-    );
-    $args    = array_merge($options, $args);
-    $offset  = $args['offset'];
-    $limit   = $args['limit'];
-    $genre   = Wo_Secure($args['genre']);
-    $id      = Wo_Secure($args['id']);
-    $country = Wo_Secure($args['country']);
-    $sub_sql = "";
-    $total   = "";
-    if ($offset && $offset > 0) {
-        $sub_sql .= " AND `id` < {$offset} AND `id` <> {$offset} ";
-    }
-    if ($id && is_numeric($id)) {
-        $sub_sql .= " AND `id` = '$id' ";
-    }
-    if ($genre && is_string($genre)) {
-        $sub_sql .= " AND `genre` = '$genre' ";
-    }
-    if ($country && is_string($country)) {
-        $sub_sql .= " AND `country` = '$country' ";
-    }
-    if ($limit && is_numeric($limit)) {
-        $total = " LIMIT $limit ";
-    }
-    $query = mysqli_query($sqlConnect, "SELECT * FROM " . T_MOVIES . " WHERE `id` > 0 {$sub_sql} ORDER BY `id` DESC {$total}");
-    $data  = array();
-    if (mysqli_num_rows($query)) {
-        while ($fetched_data = mysqli_fetch_assoc($query)) {
-            $fetched_data['cover']  = Wo_GetMedia($fetched_data['cover']);
-            $fetched_data['source'] = Wo_GetMedia($fetched_data['source']);
-            $fetched_data['url']    = Wo_SeoLink("index.php?link1=watch-film&film-id=" . $fetched_data['id']);
-            $data[]                 = $fetched_data;
-        }
-    }
-    return $data;
-}
-function Wo_GetRecommendedFilms() {
-    global $sqlConnect, $wo;
-    if ($wo['loggedin'] == false) {
-        return false;
-    }
-    $data  = array();
-    $year  = date('Y');
-    $sql   = "SELECT * FROM " . T_MOVIES . " WHERE `release` = '$year' OR `quality` IN ('hd','dvd','hd-tv') ORDER BY `id` DESC LIMIT 26";
-    $query = mysqli_query($sqlConnect, $sql);
-    if (mysqli_num_rows($query)) {
-        while ($fetched_data = mysqli_fetch_assoc($query)) {
-            $fetched_data['cover']  = Wo_GetMedia($fetched_data['cover']);
-            $fetched_data['source'] = Wo_GetMedia($fetched_data['source']);
-            $fetched_data['url']    = Wo_SeoLink("index.php?link1=watch-film&film-id=" . $fetched_data['id']);
-            $data[]                 = $fetched_data;
-        }
-    }
-    return $data;
-}
-function Wo_GetNewFilms() {
-    global $sqlConnect, $wo;
-    if ($wo['loggedin'] == false) {
-        return false;
-    }
-    $data  = array();
-    $year  = date('Y');
-    $sql   = "SELECT * FROM " . T_MOVIES . " WHERE `release` = '$year' ORDER BY `id` DESC LIMIT 26";
-    $query = mysqli_query($sqlConnect, $sql);
-    if (mysqli_num_rows($query)) {
-        while ($fetched_data = mysqli_fetch_assoc($query)) {
-            $fetched_data['cover']  = Wo_GetMedia($fetched_data['cover']);
-            $fetched_data['source'] = Wo_GetMedia($fetched_data['source']);
-            $fetched_data['url']    = Wo_SeoLink("index.php?link1=watch-film&film-id=" . $fetched_data['id']);
-            $data[]                 = $fetched_data;
-        }
-    }
-    return $data;
-}
-function Wo_GetMtwFilms($limit = 26) {
-    global $sqlConnect, $wo;
-    if ($wo['loggedin'] == false) {
-        return false;
-    }
-    $data  = array();
-    $year  = date('Y');
-    $limit = Wo_Secure($limit);
-    $sql   = "SELECT * FROM " . T_MOVIES . "  ORDER BY `views` DESC LIMIT {$limit}";
-    $query = mysqli_query($sqlConnect, $sql);
-    if (mysqli_num_rows($query)) {
-        while ($fetched_data = mysqli_fetch_assoc($query)) {
-            $fetched_data['cover']  = Wo_GetMedia($fetched_data['cover']);
-            $fetched_data['source'] = Wo_GetMedia($fetched_data['source']);
-            $fetched_data['url']    = Wo_SeoLink("index.php?link1=watch-film&film-id=" . $fetched_data['id']);
-            $data[]                 = $fetched_data;
-        }
-    }
-    return $data;
-}
-function Wo_SearchFilms($key) {
-    global $sqlConnect, $wo;
-    // if ($wo['loggedin'] == false || !$key) {
-    //     return false;
-    // }
-    $data  = array();
-    $key   = Wo_Secure($key);
-    $sql   = "SELECT  *  FROM
-             " . T_MOVIES . "
-             WHERE `name` LIKE '%$key%'
-              OR `description` LIKE '%$key%'
-               OR `genre` LIKE '%$key%'
-                OR `stars` LIKE '%$key%'
-                 OR `stars` LIKE '%$key%'
-                  LIMIT 10";
-    $query = mysqli_query($sqlConnect, $sql);
-    if (mysqli_num_rows($query)) {
-        while ($fetched_data = mysqli_fetch_assoc($query)) {
-            $fetched_data['url']   = Wo_SeoLink("index.php?link1=watch-film&film-id=" . $fetched_data['id']);
-            $fetched_data['name']  = Wo_GetShortTitle($fetched_data['name']);
-            $fetched_data['cover'] = Wo_GetMedia($fetched_data['cover']);
-            $data[]                = $fetched_data;
-        }
-    }
-    return $data;
-}
-function Wo_DeleteFilm($id) {
-    global $sqlConnect, $wo;
-    if ($wo['loggedin'] == false || !is_numeric($id) || ($wo['user']['admin'] != 1 && Wo_IsModerator() == false)) {
-        return false;
-    }
-    $id  = Wo_Secure($id);
-    $sql = "DELETE FROM " . T_MOVIES . " WHERE `id` = '$id'";
-    return mysqli_query($sqlConnect, $sql);
-}
-function Wo_RegisterMovieComment($registration_data = array()) {
-    global $sqlConnect, $wo;
-    if ($wo['loggedin'] == false) {
-        return false;
-    }
-    $fields = '`' . implode('`, `', array_keys($registration_data)) . '`';
-    $data   = '\'' . implode('\', \'', $registration_data) . '\'';
-    $query  = mysqli_query($sqlConnect, "INSERT INTO " . T_MOVIE_COMMS . " ({$fields}) VALUES ({$data})");
-    if ($query) {
-        return mysqli_insert_id($sqlConnect);
-    }
-    return false;
-}
-function Wo_RegisterMovieCommentReply($registration_data = array()) {
-    global $sqlConnect, $wo;
-    if ($wo['loggedin'] == false) {
-        return false;
-    }
-    $fields = '`' . implode('`, `', array_keys($registration_data)) . '`';
-    $data   = '\'' . implode('\', \'', $registration_data) . '\'';
-    $query  = mysqli_query($sqlConnect, "INSERT INTO " . T_MOVIE_COMM_REPLIES . " ({$fields}) VALUES ({$data})");
-    if ($query) {
-        return mysqli_insert_id($sqlConnect);
-    }
-    return false;
-}
-function Wo_GetMovieCommentsCount($id) {
-    global $sqlConnect, $wo;
-    $is_owner = false;
-    if ($wo['loggedin'] == false || !$id || !is_numeric($id) || $id < 1) {
-        return false;
-    }
-    $count = 0;
-    $sql   = "SELECT COUNT(`id`) as blogComments FROM " . T_MOVIE_COMMS . " WHERE `movie_id` = '$id'";
-    $query = mysqli_query($sqlConnect, $sql);
-    if (mysqli_num_rows($query)) {
-        $fetched_data = mysqli_fetch_assoc($query);
-        $count += $fetched_data['blogComments'];
-    }
-    $sql   = "SELECT COUNT(`id`) as blogComments FROM " . T_MOVIE_COMM_REPLIES . " WHERE `movie_id` = '$id'";
-    $query = mysqli_query($sqlConnect, $sql);
-    if (mysqli_num_rows($query)) {
-        $fetched_data = mysqli_fetch_assoc($query);
-        return $count + $fetched_data['blogComments'];
-    }
-    return $count;
-}
-function Wo_GetMovieComments($args = array()) {
-    global $sqlConnect, $wo;
-    $options   = array(
-        "id" => false,
-        "offset" => 0,
-        "movie_id" => false
-    );
-    $args      = array_merge($options, $args);
-    $offset    = Wo_Secure($args['offset']);
-    $id        = Wo_Secure($args['id']);
-    $movie_id  = Wo_Secure($args['movie_id']);
-    $query_one = '';
-    $data      = array();
-    if ($offset > 0) {
-        $query_one .= " AND `id` < {$offset} AND `id` <> {$offset} ";
-    }
-    if ($id && $id > 0 && is_numeric($id)) {
-        $query_one .= " AND `id` = '$id' ";
-    }
-    if ($movie_id && $movie_id > 0 && is_numeric($movie_id)) {
-        $query_one .= " AND `movie_id` = '$movie_id' ";
-    }
-    $limit = " LIMIT 10 ";
-    if (!empty($args['limit']) && is_numeric($args['limit']) && $args['limit'] > 0) {
-        $limit = Wo_Secure($args['limit']);
-        $limit = " LIMIT $limit ";
-    }
-    $query = mysqli_query($sqlConnect, "SELECT `id` FROM  " . T_MOVIE_COMMS . " WHERE `id` > 0 {$query_one} ORDER BY `id` DESC $limit");
-    if (mysqli_num_rows($query)) {
-        while ($fetched_data = mysqli_fetch_assoc($query)) {
-            $comment = Wo_GetMovieCommentData($fetched_data['id']);
-            if ($comment && !empty($comment)) {
-                $data[] = $comment;
-            }
-        }
-    }
-    return $data;
-}
-function Wo_GetMovieCommentReplies($args = array()) {
-    global $sqlConnect, $wo;
-    $options   = array(
-        "id" => false,
-        "movie_id" => false,
-        "comm_id" => false
-    );
-    $args      = array_merge($options, $args);
-    $id        = Wo_Secure($args['id']);
-    $movie_id  = Wo_Secure($args['movie_id']);
-    $comm_id   = Wo_Secure($args['comm_id']);
-    $query_one = '';
-    $limit     = "";
-    $data      = array();
-    if ($id && $id > 0 && is_numeric($id)) {
-        $query_one .= " AND `id` = '$id' ";
-    }
-    if ($movie_id && $movie_id > 0 && is_numeric($movie_id)) {
-        $query_one .= " AND `movie_id` = '$movie_id' ";
-    }
-    if ($comm_id && $comm_id > 0 && is_numeric($comm_id)) {
-        $query_one .= " AND `comm_id` = '$comm_id' ";
-    }
-    if (!empty($args['limit']) && is_numeric($args['limit']) && $args['limit'] > 0) {
-        $limit = Wo_Secure($args['limit']);
-        $limit = " LIMIT $limit";
-    }
-    if (!empty($args['offset']) && is_numeric($args['offset']) && $args['offset'] > 0) {
-        $offset = Wo_Secure($args['offset']);
-        $query_one .= " AND `id` > $offset ";
-    }
-    $query = mysqli_query($sqlConnect, "SELECT `id` FROM  " . T_MOVIE_COMM_REPLIES . " WHERE `id` > 0 {$query_one} ORDER BY `id` ASC $limit");
-    if (mysqli_num_rows($query)) {
-        while ($fetched_data = mysqli_fetch_assoc($query)) {
-            $comment = Wo_GetMovieCommReplyData($fetched_data['id']);
-            if ($comment && !empty($comment)) {
-                $data[] = $comment;
-            }
-        }
-    }
-    return $data;
-}
-function Wo_IsMovieCommentOwner($id) {
-    global $sqlConnect, $wo;
-    $is_owner = false;
-    if ($wo['loggedin'] == false || !$id || !is_numeric($id) || $id < 1) {
-        return false;
-    }
-    $query = mysqli_query($sqlConnect, "SELECT * FROM  " . T_MOVIE_COMMS . " WHERE `id` = '$id'");
-    if (mysqli_num_rows($query)) {
-        $fetched_data = mysqli_fetch_assoc($query);
-        if (!empty($fetched_data) && is_array($fetched_data)) {
-            if ($fetched_data['user_id'] == $wo['user']['id'] || $wo['user']['admin'] == 1) {
-                $is_owner = true;
-            }
-        }
-    }
-    return $is_owner;
-}
-function Wo_IsMovieCommReplyOwner($id) {
-    global $sqlConnect, $wo;
-    $is_owner = false;
-    if ($wo['loggedin'] == false || !$id || !is_numeric($id) || $id < 1) {
-        return false;
-    }
-    $query = mysqli_query($sqlConnect, "SELECT * FROM  " . T_MOVIE_COMM_REPLIES . " WHERE `id` = '$id'");
-    if (mysqli_num_rows($query)) {
-        $fetched_data = mysqli_fetch_assoc($query);
-        if (!empty($fetched_data) && is_array($fetched_data)) {
-            if ($fetched_data['user_id'] == $wo['user']['id'] || $wo['user']['admin'] == 1) {
-                $is_owner = true;
-            }
-        }
-    }
-    return $is_owner;
-}
-function Wo_GetMovieCommentData($id) {
-    global $sqlConnect, $wo;
-    if (!$id || !is_numeric($id) || $id < 1) {
-        return false;
-    }
-    $query = mysqli_query($sqlConnect, "SELECT * FROM  " . T_MOVIE_COMMS . " WHERE `id` = '$id'");
-    if (mysqli_num_rows($query)) {
-        $fetched_data = mysqli_fetch_assoc($query);
-        $data         = false;
-        if (!empty($fetched_data)) {
-            $fetched_data['user_data'] = Wo_UserData($fetched_data['user_id']);
-            $fetched_data['is_owner']  = Wo_IsMovieCommentOwner($fetched_data['id']);
-            $fetched_data['likes']     = Wo_GetMovieCommLikes($fetched_data['id']);
-            $fetched_data['dislikes']  = Wo_GetMovieCommDisLikes($fetched_data['id']);
-            $fetched_data['replies']   = Wo_GetMovieCommentReplies(array(
-                'comm_id' => $fetched_data['id']
-            ));
-            $data                      = $fetched_data;
-        }
-        return $data;
-    }
-    return false;
-}
-function Wo_GetMovieCommReplyData($id) {
-    global $sqlConnect, $wo;
-    if (!$id || !is_numeric($id) || $id < 1) {
-        return false;
-    }
-    $query = mysqli_query($sqlConnect, "SELECT * FROM  " . T_MOVIE_COMM_REPLIES . " WHERE `id` = '$id'");
-    if (mysqli_num_rows($query)) {
-        $fetched_data = mysqli_fetch_assoc($query);
-        $data         = false;
-        if (!empty($fetched_data)) {
-            $fetched_data['user_data'] = Wo_UserData($fetched_data['user_id']);
-            $fetched_data['is_owner']  = Wo_IsMovieCommReplyOwner($fetched_data['id']);
-            $fetched_data['likes']     = Wo_GetMovieCommReplyLikes($fetched_data['id']);
-            $fetched_data['dislikes']  = Wo_GetMovieCommReplyDisLikes($fetched_data['id']);
-            $data                      = $fetched_data;
-        }
-        return $data;
-    }
-    return false;
-}
-function Wo_GetMovieCommLikes($id) {
-    global $sqlConnect, $wo;
-    $id    = Wo_Secure($id);
-    $likes = 0;
-    $sql   = "SELECT COUNT(`id`) as movieCommentLikes FROM " . T_BM_LIKES . " WHERE `movie_comm_id` = '$id'";
-    $query = mysqli_query($sqlConnect, $sql);
-    if (mysqli_num_rows($query)) {
-        if ($query && !empty($query)) {
-            $fetched_data = mysqli_fetch_assoc($query);
-            $likes        = $fetched_data['movieCommentLikes'];
-        }
-    }
-    return $likes;
-}
-function Wo_GetMovieCommDisLikes($id) {
-    global $sqlConnect, $wo;
-    $id    = Wo_Secure($id);
-    $likes = 0;
-    $sql   = "SELECT COUNT(`id`) as movieCommentDisLikes FROM " . T_BM_DISLIKES . " WHERE `movie_comm_id` = '$id'";
-    $query = mysqli_query($sqlConnect, $sql);
-    if (mysqli_num_rows($query)) {
-        if ($query && !empty($query)) {
-            $fetched_data = mysqli_fetch_assoc($query);
-            $likes        = $fetched_data['movieCommentDisLikes'];
-        }
-    }
-    return $likes;
-}
-function Wo_GetMovieCommReplyDisLikes($id) {
-    global $sqlConnect, $wo;
-    $id    = Wo_Secure($id);
-    $likes = 0;
-    $sql   = "SELECT COUNT(`id`) as movieCommentReplyDisLikes FROM " . T_BM_DISLIKES . " WHERE `movie_commreply_id` = '$id'";
-    $query = mysqli_query($sqlConnect, $sql);
-    if (mysqli_num_rows($query)) {
-        if ($query && !empty($query)) {
-            $fetched_data = mysqli_fetch_assoc($query);
-            $likes        = $fetched_data['movieCommentReplyDisLikes'];
-        }
-    }
-    return $likes;
-}
-function Wo_GetMovieCommReplyLikes($id) {
-    global $sqlConnect, $wo;
-    $id    = Wo_Secure($id);
-    $likes = 0;
-    $sql   = "SELECT COUNT(`id`) as movieCommentReplyLikes FROM " . T_BM_LIKES . " WHERE `movie_commreply_id` = '$id'";
-    $query = mysqli_query($sqlConnect, $sql);
-    if (mysqli_num_rows($query)) {
-        if ($query && !empty($query)) {
-            $fetched_data = mysqli_fetch_assoc($query);
-            $likes        = $fetched_data['movieCommentReplyLikes'];
-        }
-    }
-    return $likes;
-}
-function Wo_IsMovieCommentLikeExists($id) {
-    global $sqlConnect, $wo;
-    if ($wo['loggedin'] == false || !$id || !is_numeric($id) || $id < 1) {
-        return false;
-    }
-    $id     = Wo_Secure($id);
-    $user   = $wo['user']['id'];
-    $sql    = "SELECT `id` FROM " . T_BM_LIKES . " WHERE `movie_comm_id` = '$id' AND `user_id` = '$user'";
-    $exists = false;
-    $query  = mysqli_query($sqlConnect, $sql);
-    if ($query && !empty($query)) {
-        $likes = mysqli_num_rows($query);
-        if ($likes > 0) {
-            $exists = true;
-        }
-    }
-    return $exists;
-}
-function Wo_IsMovieCommentDisLikeExists($id) {
-    global $sqlConnect, $wo;
-    if ($wo['loggedin'] == false || !$id || !is_numeric($id) || $id < 1) {
-        return false;
-    }
-    $id     = Wo_Secure($id);
-    $user   = $wo['user']['id'];
-    $sql    = "SELECT `id` FROM " . T_BM_DISLIKES . " WHERE `movie_comm_id` = '$id' AND `user_id` = '$user'";
-    $exists = false;
-    $query  = mysqli_query($sqlConnect, $sql);
-    if ($query && !empty($query)) {
-        $likes = mysqli_num_rows($query);
-        if ($likes > 0) {
-            $exists = true;
-        }
-    }
-    return $exists;
-}
-function Wo_IsMovieCommentReplyLikeExists($id) {
-    global $sqlConnect, $wo;
-    if ($wo['loggedin'] == false || !$id || !is_numeric($id) || $id < 1) {
-        return false;
-    }
-    $id     = Wo_Secure($id);
-    $user   = $wo['user']['id'];
-    $sql    = "SELECT `id` FROM " . T_BM_LIKES . " WHERE `movie_commreply_id` = '$id' AND `user_id` = '$user'";
-    $exists = false;
-    $query  = mysqli_query($sqlConnect, $sql);
-    if ($query && !empty($query)) {
-        $likes = mysqli_num_rows($query);
-        if ($likes > 0) {
-            $exists = true;
-        }
-    }
-    return $exists;
-}
-function Wo_IsMovieCommentReplyDisLikeExists($id) {
-    global $sqlConnect, $wo;
-    if ($wo['loggedin'] == false || !$id || !is_numeric($id) || $id < 1) {
-        return false;
-    }
-    $id     = Wo_Secure($id);
-    $user   = $wo['user']['id'];
-    $sql    = "SELECT `id` FROM " . T_BM_DISLIKES . " WHERE `movie_commreply_id` = '$id' AND `user_id` = '$user'";
-    $exists = false;
-    $query  = mysqli_query($sqlConnect, $sql);
-    if ($query && !empty($query)) {
-        $likes = mysqli_num_rows($query);
-        if ($likes > 0) {
-            $exists = true;
-        }
-    }
-    return $exists;
-}
-function Wo_RemoveMovieCommentLikes($id) {
-    global $sqlConnect, $wo;
-    if ($wo['loggedin'] == false || !$id || !is_numeric($id) || $id < 1) {
-        return false;
-    }
-    $id   = Wo_Secure($id);
-    $user = $wo['user']['id'];
-    $sql  = "DELETE  FROM " . T_BM_LIKES . " WHERE `movie_comm_id` = '$id' AND `user_id` = '$user'";
-    return mysqli_query($sqlConnect, $sql);
-}
-function Wo_RemoveMovieCommentDisLikes($id) {
-    global $sqlConnect, $wo;
-    if ($wo['loggedin'] == false || !$id || !is_numeric($id) || $id < 1) {
-        return false;
-    }
-    $id   = Wo_Secure($id);
-    $user = $wo['user']['id'];
-    $sql  = "DELETE  FROM " . T_BM_DISLIKES . " WHERE `movie_comm_id` = '$id' AND `user_id` = '$user'";
-    return mysqli_query($sqlConnect, $sql);
-}
-function Wo_RemoveMovieCommentReplyDisLikes($id) {
-    global $sqlConnect, $wo;
-    if ($wo['loggedin'] == false || !$id || !is_numeric($id) || $id < 1) {
-        return false;
-    }
-    $id   = Wo_Secure($id);
-    $user = $wo['user']['id'];
-    $sql  = "DELETE  FROM " . T_BM_DISLIKES . " WHERE `movie_commreply_id` = '$id' AND `user_id` = '$user'";
-    return mysqli_query($sqlConnect, $sql);
-}
-function Wo_RemoveMovieCommentReplyLikes($id) {
-    global $sqlConnect, $wo;
-    if ($wo['loggedin'] == false || !$id || !is_numeric($id) || $id < 1) {
-        return false;
-    }
-    $id   = Wo_Secure($id);
-    $user = $wo['user']['id'];
-    $sql  = "DELETE  FROM " . T_BM_LIKES . " WHERE `movie_commreply_id` = '$id' AND `user_id` = '$user'";
-    return mysqli_query($sqlConnect, $sql);
-}
-function Wo_AddMovieCommentLikes($id, $movie) {
-    global $sqlConnect, $wo;
-    if ($wo['loggedin'] == false || !$id || !is_numeric($id) || $id < 1 || !$movie || $movie < 1) {
-        return false;
-    }
-    $user    = $wo['user']['id'];
-    $id      = Wo_Secure($id);
-    $movie   = Wo_Secure($movie);
-    $comment = Wo_GetMovieCommentData($id);
-    $result  = false;
-    @Wo_RemoveMovieCommentDisLikes($id);
-    if ($comment && !empty($comment) && !Wo_IsMovieCommentLikeExists($id)) {
-        $sql   = "INSERT INTO " . T_BM_LIKES . "
-                    (`id`, `blog_comm_id`,`blog_commreply_id`, `movie_comm_id`,`movie_commreply_id`, `user_id`,`movie_id`)
-                        VALUES (NULL, '0', '0', '$id', '0', '$user','$movie')";
-        $query = mysqli_query($sqlConnect, $sql);
-        if ($query) {
-            $result = true;
-        }
-    } else if ($comment && !empty($comment) && Wo_RemoveMovieCommentLikes($id)) {
-        $result = true;
-    }
-    return $result;
-}
-function Wo_AddMovieCommentDisLikes($id, $movie) {
-    global $sqlConnect, $wo;
-    if ($wo['loggedin'] == false || !$id || !is_numeric($id) || $id < 1 || !$movie || $movie < 1) {
-        return false;
-    }
-    $id      = Wo_Secure($id);
-    $movie   = Wo_Secure($movie);
-    $comment = Wo_GetMovieCommentData($id);
-    $result  = false;
-    $user    = $wo['user']['id'];
-    @Wo_RemoveMovieCommentLikes($id);
-    if ($comment && !empty($comment) && !Wo_IsMovieCommentDisLikeExists($id)) {
-        $sql   = "INSERT INTO " . T_BM_DISLIKES . "
-                    (`id`, `blog_comm_id`,`blog_commreply_id`, `movie_comm_id`,`movie_commreply_id`, `user_id`,`movie_id`)
-                        VALUES (NULL, '0', '0','$id','0', '$user','$movie')";
-        $query = mysqli_query($sqlConnect, $sql);
-        if ($query) {
-            $result = true;
-        }
-    } else if ($comment && !empty($comment) && Wo_RemoveMovieCommentDisLikes($id)) {
-        $result = true;
-    }
-    return $result;
-}
-function Wo_AddMovieCommReplyLikes($id, $movie) {
-    global $sqlConnect, $wo;
-    if ($wo['loggedin'] == false || !$id || !is_numeric($id) || $id < 1 || !$movie || $movie < 1) {
-        return false;
-    }
-    $id      = Wo_Secure($id);
-    $movie   = Wo_Secure($movie);
-    $comment = Wo_GetMovieCommReplyData($id);
-    $result  = false;
-    $user    = $wo['user']['id'];
-    if ($comment && !empty($comment) && !Wo_IsMovieCommentReplyLikeExists($id)) {
-        $sql   = "INSERT INTO " . T_BM_LIKES . "
-                    (`id`, `blog_comm_id`,`blog_commreply_id`, `movie_comm_id`, `movie_commreply_id`, `user_id`,`movie_id`)
-                        VALUES (NULL, '0', '0','0','$id', '$user','$movie')";
-        $query = mysqli_query($sqlConnect, $sql);
-        if ($query) {
-            $result = true;
-            @Wo_RemoveMovieCommentReplyDisLikes($id);
-        }
-    } else if ($comment && !empty($comment) && Wo_RemoveMovieCommentReplyLikes($id)) {
-        $result = true;
-    }
-    return $result;
-}
-function Wo_AddMovieCommReplyDisLikes($id, $movie) {
-    global $sqlConnect, $wo;
-    if ($wo['loggedin'] == false || !$id || !is_numeric($id) || $id < 1 || !$movie || $movie < 1) {
-        return false;
-    }
-    $id      = Wo_Secure($id);
-    $movie   = Wo_Secure($movie);
-    $comment = Wo_GetMovieCommReplyData($id);
-    $result  = false;
-    $user    = $wo['user']['id'];
-    if ($comment && !empty($comment) && !Wo_IsMovieCommentReplyDisLikeExists($id)) {
-        $sql   = "INSERT INTO " . T_BM_DISLIKES . "
-                    (`id`, `blog_comm_id`,`blog_commreply_id`, `movie_comm_id`,`movie_commreply_id`, `user_id`,`movie_id`)
-                        VALUES (NULL, '0', '0','0','$id', '$user','$movie')";
-        $query = mysqli_query($sqlConnect, $sql);
-        if ($query) {
-            $result = true;
-            @Wo_RemoveMovieCommentReplyLikes($id);
-        }
-    } else if ($comment && !empty($comment) && Wo_RemoveMovieCommentReplyDisLikes($id)) {
-        $result = true;
-    }
-    return $result;
-}
+// function Wo_InsertFilm($registration_data = array()) {
+//     global $sqlConnect, $wo;
+//     if ($wo['loggedin'] == false) {
+//         return false;
+//     }
+//     $fields = '`' . implode('`, `', array_keys($registration_data)) . '`';
+//     $data   = '\'' . implode('\', \'', $registration_data) . '\'';
+//     $sql    = "INSERT INTO " . T_MOVIES . " ({$fields}) VALUES ({$data})";
+//     $query = mysqli_query($sqlConnect, $sql) or die(mysqli_error($sqlConnect));
+//     if ($query) {
+//         $id = mysqli_insert_id($sqlConnect);
+//         return $id;
+//     }
+//     return false;
+// }
+// function Wo_UpdateFilm($id = 0, $update_data = array()) {
+//     global $sqlConnect, $wo;
+//     $update = array();
+//     if ($wo['loggedin'] == false) {
+//         return false;
+//     }
+//     if (empty($update_data)) {
+//         return false;
+//     }
+//     if (empty($id)) {
+//         return false;
+//     }
+//     $id = Wo_Secure($id);
+//     foreach ($update_data as $field => $data) {
+//         $update[] = '`' . $field . '` = \'' . Wo_Secure($data, 0) . '\'';
+//     }
+//     $impload   = implode(', ', $update);
+//     $query_one = "UPDATE " . T_MOVIES . " SET {$impload} WHERE `id` = {$id} ";
+//     $query     = mysqli_query($sqlConnect, $query_one);
+//     return $query;
+// }
+// function Wo_AddBlogCommReplyDisLikes($id, $blog) {
+//     global $sqlConnect, $wo;
+//     if ($wo['loggedin'] == false || !$id || !is_numeric($id) || $id < 1 || !$blog || $blog < 1) {
+//         return false;
+//     }
+//     $id      = Wo_Secure($id);
+//     $blog    = Wo_Secure($blog);
+//     $comment = Wo_GetBlogCommReplyData($id);
+//     $result  = false;
+//     $user    = $wo['user']['id'];
+//     if ($comment && !empty($comment) && !Wo_IsBlogCommentReplyDisLikeExists($id)) {
+//         $sql   = "INSERT INTO " . T_BM_DISLIKES . "
+//                     (`id`, `blog_comm_id`,`blog_commreply_id`, `movie_comm_id`,`movie_commreply_id`, `user_id`,`blog_id`)
+//                         VALUES (NULL, '0', '$id','0','0', '$user','$blog')";
+//         $query = mysqli_query($sqlConnect, $sql);
+//         if ($query) {
+//             $result = true;
+//             @Wo_RemoveBlogCommentReplyLikes($id);
+//         }
+//     } else if ($comment && !empty($comment) && Wo_RemoveBlogCommentReplyDisLikes($id)) {
+//         $result = true;
+//     }
+//     return $result;
+// }
+// function Wo_AddBlogCommentDisLikes($id, $blog) {
+//     global $sqlConnect, $wo;
+//     if ($wo['loggedin'] == false || !$id || !is_numeric($id) || $id < 1 || !$blog || $blog < 1) {
+//         return false;
+//     }
+//     $id      = Wo_Secure($id);
+//     $blog    = Wo_Secure($blog);
+//     $comment = Wo_GetBlogCommentData($id);
+//     $result  = false;
+//     $user    = $wo['user']['id'];
+//     @Wo_RemoveBlogCommentLikes($id);
+//     if ($comment && !empty($comment) && !Wo_IsBlogCommentDisLikeExists($id)) {
+//         $sql   = "INSERT INTO " . T_BM_DISLIKES . "
+//                     (`id`, `blog_comm_id`,`blog_commreply_id`, `movie_comm_id`,`movie_commreply_id`, `user_id`,`blog_id`)
+//                         VALUES (NULL, '$id', '0','0','0', '$user','$blog')";
+//         $query = mysqli_query($sqlConnect, $sql);
+//         if ($query) {
+//             $result = true;
+//         }
+//     } else if ($comment && !empty($comment) && Wo_RemoveBlogCommentDisLikes($id)) {
+//         $result = true;
+//     }
+//     return $result;
+// }
+// function Wo_GetMovies($args = array()) {
+//     global $sqlConnect, $wo;
+//     // if ($wo['loggedin'] == false) {
+//     //     return false;
+//     // }
+//     $options = array(
+//         "offset" => 0,
+//         "limit" => 26,
+//         "id" => false,
+//         "genre" => false,
+//         "country" => false
+//     );
+//     $args    = array_merge($options, $args);
+//     $offset  = $args['offset'];
+//     $limit   = $args['limit'];
+//     $genre   = Wo_Secure($args['genre']);
+//     $id      = Wo_Secure($args['id']);
+//     $country = Wo_Secure($args['country']);
+//     $sub_sql = "";
+//     $total   = "";
+//     if ($offset && $offset > 0) {
+//         $sub_sql .= " AND `id` < {$offset} AND `id` <> {$offset} ";
+//     }
+//     if ($id && is_numeric($id)) {
+//         $sub_sql .= " AND `id` = '$id' ";
+//     }
+//     if ($genre && is_string($genre)) {
+//         $sub_sql .= " AND `genre` = '$genre' ";
+//     }
+//     if ($country && is_string($country)) {
+//         $sub_sql .= " AND `country` = '$country' ";
+//     }
+//     if ($limit && is_numeric($limit)) {
+//         $total = " LIMIT $limit ";
+//     }
+//     $query = mysqli_query($sqlConnect, "SELECT * FROM " . T_MOVIES . " WHERE `id` > 0 {$sub_sql} ORDER BY `id` DESC {$total}");
+//     $data  = array();
+//     if (mysqli_num_rows($query)) {
+//         while ($fetched_data = mysqli_fetch_assoc($query)) {
+//             $fetched_data['cover']  = Wo_GetMedia($fetched_data['cover']);
+//             $fetched_data['source'] = Wo_GetMedia($fetched_data['source']);
+//             $fetched_data['url']    = Wo_SeoLink("index.php?link1=watch-film&film-id=" . $fetched_data['id']);
+//             $data[]                 = $fetched_data;
+//         }
+//     }
+//     return $data;
+// }
+// function Wo_GetRecommendedFilms() {
+//     global $sqlConnect, $wo;
+//     if ($wo['loggedin'] == false) {
+//         return false;
+//     }
+//     $data  = array();
+//     $year  = date('Y');
+//     $sql   = "SELECT * FROM " . T_MOVIES . " WHERE `release` = '$year' OR `quality` IN ('hd','dvd','hd-tv') ORDER BY `id` DESC LIMIT 26";
+//     $query = mysqli_query($sqlConnect, $sql);
+//     if (mysqli_num_rows($query)) {
+//         while ($fetched_data = mysqli_fetch_assoc($query)) {
+//             $fetched_data['cover']  = Wo_GetMedia($fetched_data['cover']);
+//             $fetched_data['source'] = Wo_GetMedia($fetched_data['source']);
+//             $fetched_data['url']    = Wo_SeoLink("index.php?link1=watch-film&film-id=" . $fetched_data['id']);
+//             $data[]                 = $fetched_data;
+//         }
+//     }
+//     return $data;
+// }
+// function Wo_GetNewFilms() {
+//     global $sqlConnect, $wo;
+//     if ($wo['loggedin'] == false) {
+//         return false;
+//     }
+//     $data  = array();
+//     $year  = date('Y');
+//     $sql   = "SELECT * FROM " . T_MOVIES . " WHERE `release` = '$year' ORDER BY `id` DESC LIMIT 26";
+//     $query = mysqli_query($sqlConnect, $sql);
+//     if (mysqli_num_rows($query)) {
+//         while ($fetched_data = mysqli_fetch_assoc($query)) {
+//             $fetched_data['cover']  = Wo_GetMedia($fetched_data['cover']);
+//             $fetched_data['source'] = Wo_GetMedia($fetched_data['source']);
+//             $fetched_data['url']    = Wo_SeoLink("index.php?link1=watch-film&film-id=" . $fetched_data['id']);
+//             $data[]                 = $fetched_data;
+//         }
+//     }
+//     return $data;
+// }
+// function Wo_GetMtwFilms($limit = 26) {
+//     global $sqlConnect, $wo;
+//     if ($wo['loggedin'] == false) {
+//         return false;
+//     }
+//     $data  = array();
+//     $year  = date('Y');
+//     $limit = Wo_Secure($limit);
+//     $sql   = "SELECT * FROM " . T_MOVIES . "  ORDER BY `views` DESC LIMIT {$limit}";
+//     $query = mysqli_query($sqlConnect, $sql);
+//     if (mysqli_num_rows($query)) {
+//         while ($fetched_data = mysqli_fetch_assoc($query)) {
+//             $fetched_data['cover']  = Wo_GetMedia($fetched_data['cover']);
+//             $fetched_data['source'] = Wo_GetMedia($fetched_data['source']);
+//             $fetched_data['url']    = Wo_SeoLink("index.php?link1=watch-film&film-id=" . $fetched_data['id']);
+//             $data[]                 = $fetched_data;
+//         }
+//     }
+//     return $data;
+// }
+// function Wo_SearchFilms($key) {
+//     global $sqlConnect, $wo;
+//     // if ($wo['loggedin'] == false || !$key) {
+//     //     return false;
+//     // }
+//     $data  = array();
+//     $key   = Wo_Secure($key);
+//     $sql   = "SELECT  *  FROM
+//              " . T_MOVIES . "
+//              WHERE `name` LIKE '%$key%'
+//               OR `description` LIKE '%$key%'
+//                OR `genre` LIKE '%$key%'
+//                 OR `stars` LIKE '%$key%'
+//                  OR `stars` LIKE '%$key%'
+//                   LIMIT 10";
+//     $query = mysqli_query($sqlConnect, $sql);
+//     if (mysqli_num_rows($query)) {
+//         while ($fetched_data = mysqli_fetch_assoc($query)) {
+//             $fetched_data['url']   = Wo_SeoLink("index.php?link1=watch-film&film-id=" . $fetched_data['id']);
+//             $fetched_data['name']  = Wo_GetShortTitle($fetched_data['name']);
+//             $fetched_data['cover'] = Wo_GetMedia($fetched_data['cover']);
+//             $data[]                = $fetched_data;
+//         }
+//     }
+//     return $data;
+// }
+// function Wo_DeleteFilm($id) {
+//     global $sqlConnect, $wo;
+//     if ($wo['loggedin'] == false || !is_numeric($id) || ($wo['user']['admin'] != 1 && Wo_IsModerator() == false)) {
+//         return false;
+//     }
+//     $id  = Wo_Secure($id);
+//     $sql = "DELETE FROM " . T_MOVIES . " WHERE `id` = '$id'";
+//     return mysqli_query($sqlConnect, $sql);
+// }
+// function Wo_RegisterMovieComment($registration_data = array()) {
+//     global $sqlConnect, $wo;
+//     if ($wo['loggedin'] == false) {
+//         return false;
+//     }
+//     $fields = '`' . implode('`, `', array_keys($registration_data)) . '`';
+//     $data   = '\'' . implode('\', \'', $registration_data) . '\'';
+//     $query  = mysqli_query($sqlConnect, "INSERT INTO " . T_MOVIE_COMMS . " ({$fields}) VALUES ({$data})");
+//     if ($query) {
+//         return mysqli_insert_id($sqlConnect);
+//     }
+//     return false;
+// }
+// function Wo_RegisterMovieCommentReply($registration_data = array()) {
+//     global $sqlConnect, $wo;
+//     if ($wo['loggedin'] == false) {
+//         return false;
+//     }
+//     $fields = '`' . implode('`, `', array_keys($registration_data)) . '`';
+//     $data   = '\'' . implode('\', \'', $registration_data) . '\'';
+//     $query  = mysqli_query($sqlConnect, "INSERT INTO " . T_MOVIE_COMM_REPLIES . " ({$fields}) VALUES ({$data})");
+//     if ($query) {
+//         return mysqli_insert_id($sqlConnect);
+//     }
+//     return false;
+// }
+// function Wo_GetMovieCommentsCount($id) {
+//     global $sqlConnect, $wo;
+//     $is_owner = false;
+//     if ($wo['loggedin'] == false || !$id || !is_numeric($id) || $id < 1) {
+//         return false;
+//     }
+//     $count = 0;
+//     $sql   = "SELECT COUNT(`id`) as blogComments FROM " . T_MOVIE_COMMS . " WHERE `movie_id` = '$id'";
+//     $query = mysqli_query($sqlConnect, $sql);
+//     if (mysqli_num_rows($query)) {
+//         $fetched_data = mysqli_fetch_assoc($query);
+//         $count += $fetched_data['blogComments'];
+//     }
+//     $sql   = "SELECT COUNT(`id`) as blogComments FROM " . T_MOVIE_COMM_REPLIES . " WHERE `movie_id` = '$id'";
+//     $query = mysqli_query($sqlConnect, $sql);
+//     if (mysqli_num_rows($query)) {
+//         $fetched_data = mysqli_fetch_assoc($query);
+//         return $count + $fetched_data['blogComments'];
+//     }
+//     return $count;
+// }
+// function Wo_GetMovieComments($args = array()) {
+//     global $sqlConnect, $wo;
+//     $options   = array(
+//         "id" => false,
+//         "offset" => 0,
+//         "movie_id" => false
+//     );
+//     $args      = array_merge($options, $args);
+//     $offset    = Wo_Secure($args['offset']);
+//     $id        = Wo_Secure($args['id']);
+//     $movie_id  = Wo_Secure($args['movie_id']);
+//     $query_one = '';
+//     $data      = array();
+//     if ($offset > 0) {
+//         $query_one .= " AND `id` < {$offset} AND `id` <> {$offset} ";
+//     }
+//     if ($id && $id > 0 && is_numeric($id)) {
+//         $query_one .= " AND `id` = '$id' ";
+//     }
+//     if ($movie_id && $movie_id > 0 && is_numeric($movie_id)) {
+//         $query_one .= " AND `movie_id` = '$movie_id' ";
+//     }
+//     $limit = " LIMIT 10 ";
+//     if (!empty($args['limit']) && is_numeric($args['limit']) && $args['limit'] > 0) {
+//         $limit = Wo_Secure($args['limit']);
+//         $limit = " LIMIT $limit ";
+//     }
+//     $query = mysqli_query($sqlConnect, "SELECT `id` FROM  " . T_MOVIE_COMMS . " WHERE `id` > 0 {$query_one} ORDER BY `id` DESC $limit");
+//     if (mysqli_num_rows($query)) {
+//         while ($fetched_data = mysqli_fetch_assoc($query)) {
+//             $comment = Wo_GetMovieCommentData($fetched_data['id']);
+//             if ($comment && !empty($comment)) {
+//                 $data[] = $comment;
+//             }
+//         }
+//     }
+//     return $data;
+// }
+// function Wo_GetMovieCommentReplies($args = array()) {
+//     global $sqlConnect, $wo;
+//     $options   = array(
+//         "id" => false,
+//         "movie_id" => false,
+//         "comm_id" => false
+//     );
+//     $args      = array_merge($options, $args);
+//     $id        = Wo_Secure($args['id']);
+//     $movie_id  = Wo_Secure($args['movie_id']);
+//     $comm_id   = Wo_Secure($args['comm_id']);
+//     $query_one = '';
+//     $limit     = "";
+//     $data      = array();
+//     if ($id && $id > 0 && is_numeric($id)) {
+//         $query_one .= " AND `id` = '$id' ";
+//     }
+//     if ($movie_id && $movie_id > 0 && is_numeric($movie_id)) {
+//         $query_one .= " AND `movie_id` = '$movie_id' ";
+//     }
+//     if ($comm_id && $comm_id > 0 && is_numeric($comm_id)) {
+//         $query_one .= " AND `comm_id` = '$comm_id' ";
+//     }
+//     if (!empty($args['limit']) && is_numeric($args['limit']) && $args['limit'] > 0) {
+//         $limit = Wo_Secure($args['limit']);
+//         $limit = " LIMIT $limit";
+//     }
+//     if (!empty($args['offset']) && is_numeric($args['offset']) && $args['offset'] > 0) {
+//         $offset = Wo_Secure($args['offset']);
+//         $query_one .= " AND `id` > $offset ";
+//     }
+//     $query = mysqli_query($sqlConnect, "SELECT `id` FROM  " . T_MOVIE_COMM_REPLIES . " WHERE `id` > 0 {$query_one} ORDER BY `id` ASC $limit");
+//     if (mysqli_num_rows($query)) {
+//         while ($fetched_data = mysqli_fetch_assoc($query)) {
+//             $comment = Wo_GetMovieCommReplyData($fetched_data['id']);
+//             if ($comment && !empty($comment)) {
+//                 $data[] = $comment;
+//             }
+//         }
+//     }
+//     return $data;
+// }
+// function Wo_IsMovieCommentOwner($id) {
+//     global $sqlConnect, $wo;
+//     $is_owner = false;
+//     if ($wo['loggedin'] == false || !$id || !is_numeric($id) || $id < 1) {
+//         return false;
+//     }
+//     $query = mysqli_query($sqlConnect, "SELECT * FROM  " . T_MOVIE_COMMS . " WHERE `id` = '$id'");
+//     if (mysqli_num_rows($query)) {
+//         $fetched_data = mysqli_fetch_assoc($query);
+//         if (!empty($fetched_data) && is_array($fetched_data)) {
+//             if ($fetched_data['user_id'] == $wo['user']['id'] || $wo['user']['admin'] == 1) {
+//                 $is_owner = true;
+//             }
+//         }
+//     }
+//     return $is_owner;
+// }
+// function Wo_IsMovieCommReplyOwner($id) {
+//     global $sqlConnect, $wo;
+//     $is_owner = false;
+//     if ($wo['loggedin'] == false || !$id || !is_numeric($id) || $id < 1) {
+//         return false;
+//     }
+//     $query = mysqli_query($sqlConnect, "SELECT * FROM  " . T_MOVIE_COMM_REPLIES . " WHERE `id` = '$id'");
+//     if (mysqli_num_rows($query)) {
+//         $fetched_data = mysqli_fetch_assoc($query);
+//         if (!empty($fetched_data) && is_array($fetched_data)) {
+//             if ($fetched_data['user_id'] == $wo['user']['id'] || $wo['user']['admin'] == 1) {
+//                 $is_owner = true;
+//             }
+//         }
+//     }
+//     return $is_owner;
+// }
+// function Wo_GetMovieCommentData($id) {
+//     global $sqlConnect, $wo;
+//     if (!$id || !is_numeric($id) || $id < 1) {
+//         return false;
+//     }
+//     $query = mysqli_query($sqlConnect, "SELECT * FROM  " . T_MOVIE_COMMS . " WHERE `id` = '$id'");
+//     if (mysqli_num_rows($query)) {
+//         $fetched_data = mysqli_fetch_assoc($query);
+//         $data         = false;
+//         if (!empty($fetched_data)) {
+//             $fetched_data['user_data'] = Wo_UserData($fetched_data['user_id']);
+//             $fetched_data['is_owner']  = Wo_IsMovieCommentOwner($fetched_data['id']);
+//             $fetched_data['likes']     = Wo_GetMovieCommLikes($fetched_data['id']);
+//             $fetched_data['dislikes']  = Wo_GetMovieCommDisLikes($fetched_data['id']);
+//             $fetched_data['replies']   = Wo_GetMovieCommentReplies(array(
+//                 'comm_id' => $fetched_data['id']
+//             ));
+//             $data                      = $fetched_data;
+//         }
+//         return $data;
+//     }
+//     return false;
+// }
+// function Wo_GetMovieCommReplyData($id) {
+//     global $sqlConnect, $wo;
+//     if (!$id || !is_numeric($id) || $id < 1) {
+//         return false;
+//     }
+//     $query = mysqli_query($sqlConnect, "SELECT * FROM  " . T_MOVIE_COMM_REPLIES . " WHERE `id` = '$id'");
+//     if (mysqli_num_rows($query)) {
+//         $fetched_data = mysqli_fetch_assoc($query);
+//         $data         = false;
+//         if (!empty($fetched_data)) {
+//             $fetched_data['user_data'] = Wo_UserData($fetched_data['user_id']);
+//             $fetched_data['is_owner']  = Wo_IsMovieCommReplyOwner($fetched_data['id']);
+//             $fetched_data['likes']     = Wo_GetMovieCommReplyLikes($fetched_data['id']);
+//             $fetched_data['dislikes']  = Wo_GetMovieCommReplyDisLikes($fetched_data['id']);
+//             $data                      = $fetched_data;
+//         }
+//         return $data;
+//     }
+//     return false;
+// }
+// function Wo_GetMovieCommLikes($id) {
+//     global $sqlConnect, $wo;
+//     $id    = Wo_Secure($id);
+//     $likes = 0;
+//     $sql   = "SELECT COUNT(`id`) as movieCommentLikes FROM " . T_BM_LIKES . " WHERE `movie_comm_id` = '$id'";
+//     $query = mysqli_query($sqlConnect, $sql);
+//     if (mysqli_num_rows($query)) {
+//         if ($query && !empty($query)) {
+//             $fetched_data = mysqli_fetch_assoc($query);
+//             $likes        = $fetched_data['movieCommentLikes'];
+//         }
+//     }
+//     return $likes;
+// }
+// function Wo_GetMovieCommDisLikes($id) {
+//     global $sqlConnect, $wo;
+//     $id    = Wo_Secure($id);
+//     $likes = 0;
+//     $sql   = "SELECT COUNT(`id`) as movieCommentDisLikes FROM " . T_BM_DISLIKES . " WHERE `movie_comm_id` = '$id'";
+//     $query = mysqli_query($sqlConnect, $sql);
+//     if (mysqli_num_rows($query)) {
+//         if ($query && !empty($query)) {
+//             $fetched_data = mysqli_fetch_assoc($query);
+//             $likes        = $fetched_data['movieCommentDisLikes'];
+//         }
+//     }
+//     return $likes;
+// }
+// function Wo_GetMovieCommReplyDisLikes($id) {
+//     global $sqlConnect, $wo;
+//     $id    = Wo_Secure($id);
+//     $likes = 0;
+//     $sql   = "SELECT COUNT(`id`) as movieCommentReplyDisLikes FROM " . T_BM_DISLIKES . " WHERE `movie_commreply_id` = '$id'";
+//     $query = mysqli_query($sqlConnect, $sql);
+//     if (mysqli_num_rows($query)) {
+//         if ($query && !empty($query)) {
+//             $fetched_data = mysqli_fetch_assoc($query);
+//             $likes        = $fetched_data['movieCommentReplyDisLikes'];
+//         }
+//     }
+//     return $likes;
+// }
+// function Wo_GetMovieCommReplyLikes($id) {
+//     global $sqlConnect, $wo;
+//     $id    = Wo_Secure($id);
+//     $likes = 0;
+//     $sql   = "SELECT COUNT(`id`) as movieCommentReplyLikes FROM " . T_BM_LIKES . " WHERE `movie_commreply_id` = '$id'";
+//     $query = mysqli_query($sqlConnect, $sql);
+//     if (mysqli_num_rows($query)) {
+//         if ($query && !empty($query)) {
+//             $fetched_data = mysqli_fetch_assoc($query);
+//             $likes        = $fetched_data['movieCommentReplyLikes'];
+//         }
+//     }
+//     return $likes;
+// }
+// function Wo_IsMovieCommentLikeExists($id) {
+//     global $sqlConnect, $wo;
+//     if ($wo['loggedin'] == false || !$id || !is_numeric($id) || $id < 1) {
+//         return false;
+//     }
+//     $id     = Wo_Secure($id);
+//     $user   = $wo['user']['id'];
+//     $sql    = "SELECT `id` FROM " . T_BM_LIKES . " WHERE `movie_comm_id` = '$id' AND `user_id` = '$user'";
+//     $exists = false;
+//     $query  = mysqli_query($sqlConnect, $sql);
+//     if ($query && !empty($query)) {
+//         $likes = mysqli_num_rows($query);
+//         if ($likes > 0) {
+//             $exists = true;
+//         }
+//     }
+//     return $exists;
+// }
+// function Wo_IsMovieCommentDisLikeExists($id) {
+//     global $sqlConnect, $wo;
+//     if ($wo['loggedin'] == false || !$id || !is_numeric($id) || $id < 1) {
+//         return false;
+//     }
+//     $id     = Wo_Secure($id);
+//     $user   = $wo['user']['id'];
+//     $sql    = "SELECT `id` FROM " . T_BM_DISLIKES . " WHERE `movie_comm_id` = '$id' AND `user_id` = '$user'";
+//     $exists = false;
+//     $query  = mysqli_query($sqlConnect, $sql);
+//     if ($query && !empty($query)) {
+//         $likes = mysqli_num_rows($query);
+//         if ($likes > 0) {
+//             $exists = true;
+//         }
+//     }
+//     return $exists;
+// }
+// function Wo_IsMovieCommentReplyLikeExists($id) {
+//     global $sqlConnect, $wo;
+//     if ($wo['loggedin'] == false || !$id || !is_numeric($id) || $id < 1) {
+//         return false;
+//     }
+//     $id     = Wo_Secure($id);
+//     $user   = $wo['user']['id'];
+//     $sql    = "SELECT `id` FROM " . T_BM_LIKES . " WHERE `movie_commreply_id` = '$id' AND `user_id` = '$user'";
+//     $exists = false;
+//     $query  = mysqli_query($sqlConnect, $sql);
+//     if ($query && !empty($query)) {
+//         $likes = mysqli_num_rows($query);
+//         if ($likes > 0) {
+//             $exists = true;
+//         }
+//     }
+//     return $exists;
+// }
+// function Wo_IsMovieCommentReplyDisLikeExists($id) {
+//     global $sqlConnect, $wo;
+//     if ($wo['loggedin'] == false || !$id || !is_numeric($id) || $id < 1) {
+//         return false;
+//     }
+//     $id     = Wo_Secure($id);
+//     $user   = $wo['user']['id'];
+//     $sql    = "SELECT `id` FROM " . T_BM_DISLIKES . " WHERE `movie_commreply_id` = '$id' AND `user_id` = '$user'";
+//     $exists = false;
+//     $query  = mysqli_query($sqlConnect, $sql);
+//     if ($query && !empty($query)) {
+//         $likes = mysqli_num_rows($query);
+//         if ($likes > 0) {
+//             $exists = true;
+//         }
+//     }
+//     return $exists;
+// }
+// function Wo_RemoveMovieCommentLikes($id) {
+//     global $sqlConnect, $wo;
+//     if ($wo['loggedin'] == false || !$id || !is_numeric($id) || $id < 1) {
+//         return false;
+//     }
+//     $id   = Wo_Secure($id);
+//     $user = $wo['user']['id'];
+//     $sql  = "DELETE  FROM " . T_BM_LIKES . " WHERE `movie_comm_id` = '$id' AND `user_id` = '$user'";
+//     return mysqli_query($sqlConnect, $sql);
+// }
+// function Wo_RemoveMovieCommentDisLikes($id) {
+//     global $sqlConnect, $wo;
+//     if ($wo['loggedin'] == false || !$id || !is_numeric($id) || $id < 1) {
+//         return false;
+//     }
+//     $id   = Wo_Secure($id);
+//     $user = $wo['user']['id'];
+//     $sql  = "DELETE  FROM " . T_BM_DISLIKES . " WHERE `movie_comm_id` = '$id' AND `user_id` = '$user'";
+//     return mysqli_query($sqlConnect, $sql);
+// }
+// function Wo_RemoveMovieCommentReplyDisLikes($id) {
+//     global $sqlConnect, $wo;
+//     if ($wo['loggedin'] == false || !$id || !is_numeric($id) || $id < 1) {
+//         return false;
+//     }
+//     $id   = Wo_Secure($id);
+//     $user = $wo['user']['id'];
+//     $sql  = "DELETE  FROM " . T_BM_DISLIKES . " WHERE `movie_commreply_id` = '$id' AND `user_id` = '$user'";
+//     return mysqli_query($sqlConnect, $sql);
+// }
+// function Wo_RemoveMovieCommentReplyLikes($id) {
+//     global $sqlConnect, $wo;
+//     if ($wo['loggedin'] == false || !$id || !is_numeric($id) || $id < 1) {
+//         return false;
+//     }
+//     $id   = Wo_Secure($id);
+//     $user = $wo['user']['id'];
+//     $sql  = "DELETE  FROM " . T_BM_LIKES . " WHERE `movie_commreply_id` = '$id' AND `user_id` = '$user'";
+//     return mysqli_query($sqlConnect, $sql);
+// }
+// function Wo_AddMovieCommentLikes($id, $movie) {
+//     global $sqlConnect, $wo;
+//     if ($wo['loggedin'] == false || !$id || !is_numeric($id) || $id < 1 || !$movie || $movie < 1) {
+//         return false;
+//     }
+//     $user    = $wo['user']['id'];
+//     $id      = Wo_Secure($id);
+//     $movie   = Wo_Secure($movie);
+//     $comment = Wo_GetMovieCommentData($id);
+//     $result  = false;
+//     @Wo_RemoveMovieCommentDisLikes($id);
+//     if ($comment && !empty($comment) && !Wo_IsMovieCommentLikeExists($id)) {
+//         $sql   = "INSERT INTO " . T_BM_LIKES . "
+//                     (`id`, `blog_comm_id`,`blog_commreply_id`, `movie_comm_id`,`movie_commreply_id`, `user_id`,`movie_id`)
+//                         VALUES (NULL, '0', '0', '$id', '0', '$user','$movie')";
+//         $query = mysqli_query($sqlConnect, $sql);
+//         if ($query) {
+//             $result = true;
+//         }
+//     } else if ($comment && !empty($comment) && Wo_RemoveMovieCommentLikes($id)) {
+//         $result = true;
+//     }
+//     return $result;
+// }
+// function Wo_AddMovieCommentDisLikes($id, $movie) {
+//     global $sqlConnect, $wo;
+//     if ($wo['loggedin'] == false || !$id || !is_numeric($id) || $id < 1 || !$movie || $movie < 1) {
+//         return false;
+//     }
+//     $id      = Wo_Secure($id);
+//     $movie   = Wo_Secure($movie);
+//     $comment = Wo_GetMovieCommentData($id);
+//     $result  = false;
+//     $user    = $wo['user']['id'];
+//     @Wo_RemoveMovieCommentLikes($id);
+//     if ($comment && !empty($comment) && !Wo_IsMovieCommentDisLikeExists($id)) {
+//         $sql   = "INSERT INTO " . T_BM_DISLIKES . "
+//                     (`id`, `blog_comm_id`,`blog_commreply_id`, `movie_comm_id`,`movie_commreply_id`, `user_id`,`movie_id`)
+//                         VALUES (NULL, '0', '0','$id','0', '$user','$movie')";
+//         $query = mysqli_query($sqlConnect, $sql);
+//         if ($query) {
+//             $result = true;
+//         }
+//     } else if ($comment && !empty($comment) && Wo_RemoveMovieCommentDisLikes($id)) {
+//         $result = true;
+//     }
+//     return $result;
+// }
+// function Wo_AddMovieCommReplyLikes($id, $movie) {
+//     global $sqlConnect, $wo;
+//     if ($wo['loggedin'] == false || !$id || !is_numeric($id) || $id < 1 || !$movie || $movie < 1) {
+//         return false;
+//     }
+//     $id      = Wo_Secure($id);
+//     $movie   = Wo_Secure($movie);
+//     $comment = Wo_GetMovieCommReplyData($id);
+//     $result  = false;
+//     $user    = $wo['user']['id'];
+//     if ($comment && !empty($comment) && !Wo_IsMovieCommentReplyLikeExists($id)) {
+//         $sql   = "INSERT INTO " . T_BM_LIKES . "
+//                     (`id`, `blog_comm_id`,`blog_commreply_id`, `movie_comm_id`, `movie_commreply_id`, `user_id`,`movie_id`)
+//                         VALUES (NULL, '0', '0','0','$id', '$user','$movie')";
+//         $query = mysqli_query($sqlConnect, $sql);
+//         if ($query) {
+//             $result = true;
+//             @Wo_RemoveMovieCommentReplyDisLikes($id);
+//         }
+//     } else if ($comment && !empty($comment) && Wo_RemoveMovieCommentReplyLikes($id)) {
+//         $result = true;
+//     }
+//     return $result;
+// }
+// function Wo_AddMovieCommReplyDisLikes($id, $movie) {
+//     global $sqlConnect, $wo;
+//     if ($wo['loggedin'] == false || !$id || !is_numeric($id) || $id < 1 || !$movie || $movie < 1) {
+//         return false;
+//     }
+//     $id      = Wo_Secure($id);
+//     $movie   = Wo_Secure($movie);
+//     $comment = Wo_GetMovieCommReplyData($id);
+//     $result  = false;
+//     $user    = $wo['user']['id'];
+//     if ($comment && !empty($comment) && !Wo_IsMovieCommentReplyDisLikeExists($id)) {
+//         $sql   = "INSERT INTO " . T_BM_DISLIKES . "
+//                     (`id`, `blog_comm_id`,`blog_commreply_id`, `movie_comm_id`,`movie_commreply_id`, `user_id`,`movie_id`)
+//                         VALUES (NULL, '0', '0','0','$id', '$user','$movie')";
+//         $query = mysqli_query($sqlConnect, $sql);
+//         if ($query) {
+//             $result = true;
+//             @Wo_RemoveMovieCommentReplyLikes($id);
+//         }
+//     } else if ($comment && !empty($comment) && Wo_RemoveMovieCommentReplyDisLikes($id)) {
+//         $result = true;
+//     }
+//     return $result;
+// }
 function Wo_GetSideBarAds() {
     global $sqlConnect, $wo;
     if ($wo['loggedin'] == false) {

@@ -32,9 +32,9 @@ if (!empty($data)) {
     $html = '';
     if (!empty($data['my_information'])) {
         $wo['user_info']['setting'] = Wo_UserData($wo['user']['user_id']);
-        $wo['user_info']['setting']['session'] = Wo_GetAllSessionsFromUserID($wo['user']['user_id']);
-        $wo['user_info']['setting']['block'] = Wo_GetBlockedMembers($wo['user']['user_id']);
-        $wo['user_info']['setting']['trans'] = Wo_GetMytransactions();
+        // $wo['user_info']['setting']['session'] = Wo_GetAllSessionsFromUserID($wo['user']['user_id']);
+        // $wo['user_info']['setting']['block'] = Wo_GetBlockedMembers($wo['user']['user_id']);
+        // $wo['user_info']['setting']['trans'] = Wo_GetMytransactions();
         $wo['user_info']['setting']['refs'] = Wo_GetReferrers();
     }
     if (!empty($data['posts'])) {

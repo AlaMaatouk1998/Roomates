@@ -1180,18 +1180,7 @@ if ($wo['loggedin'] && $IsOwnerUser) {
                     <?php echo $wo['lang']['send_a_gift']; ?>
 				</h4>
 			</div>
-			<div class="modal-body">
-                <div id="gifts-list" class="wo_send_gift">
-                    <?php foreach (Wo_GetAllGifts(500000) as $wo['giftlist']) {?>
-                        <div class="text-center gift-data" data-gift-id="<?php echo $wo['giftlist']['id'];?>">
-                            <label>
-                                <input type="radio" onClick="$('#send-gift-button').attr('data-gift-id',$(this).val());$('#send-gift-button').attr('data-gift-img','<?php echo $wo['giftlist']['media_file'];?>');$('#send-gift-button').attr('disabled',false);" name="gift" value="<?php echo $wo['giftlist']['id'];?>" />
-                                <img src="<?php echo Wo_GetMedia($wo['giftlist']['media_file']); ?>" alt="<?php echo $wo['giftlist']['name'];?> gift">
-                            </label>
-                        </div>
-                    <?php } ?>
-                </div>
-			</div>
+		
 			<div class="modal-footer">
 				<div class="ball-pulse"><div></div><div></div><div></div></div>
 				<button type="button" class="btn  btn-main" id="send-gift-button" data-gift-id="" data-gift-img="" onclick="Wo_SendGiftToUser(<?php echo $wo['user']['id']; ?>,<?php echo $wo['user_profile']['id']; ?>,this)" disabled><?php echo $wo['lang']['send']; ?></button>

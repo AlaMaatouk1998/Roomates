@@ -15,42 +15,7 @@
             		<div class="alert alert-warning"><?php echo $wo['lang']['request_review_text']; ?></div>
             	<?php }else{ ?>
 
-				<form class="create-refund-form form-horizontal" method="post">
-					<?php if ($wo['config']['pro'] == 1) { ?>
-						<div class="wow_form_fields">
-							<label for="pro_type"><?php echo $wo['lang']['member_type'];?></label>
-							<select id="pro_type" name="pro_type">
-								<?php $pros = Wo_GetProPackages();
-								unset($pros['free']);
-								?>
-								<?php foreach ($pros as $key => $pro) {?>
-									<option value="<?php echo $key;?>" <?php echo ($pro['id'] == $wo['user']['pro_type']) ? 'selected' : ''; ?>><?php echo $pro['name'];?></option>
-								<?php } ?>
-							</select>
-						</div>
-					<?php } ?>
-
-					<div class="wow_form_fields">
-						<label for="description"><?php echo $wo['lang']['reason']; ?></label>
-						<textarea name="description" id="description" rows="3"></textarea>
-					</div>
-					<p><?php echo $wo['lang']['business_days'];?></p>
-					<div class="publisher-hidden-option">
-						<div id="progress">
-							<span id="percent">0%</span>
-							<div class="progress">
-								<div id="bar" class="progress-bar progress-bar-striped active"></div> 
-							</div>
-							<div class="clear"></div>
-						</div>
-					</div>
-					<div class="app-general-alert setting-update-alert"></div>
-					<input type="hidden" name="hash_id" value="<?php echo Wo_CreateSession();?>">
-					<div class="text-center">
-						<button class="btn btn-main btn-mat btn-mat-raised add_wow_loader" type="submit"><?php echo $wo['lang']['request_refund']; ?></button>
-					</div>
-				</form>
-			    <?php } ?>
+				
 			</div>
 		</div>
 		<?php echo Wo_LoadPage('sidebar/content');?>
